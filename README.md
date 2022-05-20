@@ -36,7 +36,7 @@ This code is provided as a experimental implementation for testing purposes and 
 	git clone --recursive https://github.com/peichao538/PrivacySE.git
 	```
 
-2. Enter the Framework directory: `cd PSI/`
+2. Enter the Framework directory: `cd PrivacySE/`
 
 3. Call `make` in the root directory to compile all dependencies, tests, and examples and create the executables: **psi.exe** (used for benchmarking) and **demo.exe** (a small demonstrator for intersecting email addresses).
 
