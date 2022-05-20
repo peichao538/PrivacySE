@@ -278,6 +278,17 @@ void crypto::hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t 
 	hash_routine(resbuf, noutbytes, inbuf, ninbytes, tmpbuf);
 }
 
+void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes) {
+
+	cap_hash_ctx_t cap_hash_ctx;
+	uint32_t hash_len;
+
+	cap_hash_ctx.hdev = hdev;
+	cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
+
+	cap_hash_onetime(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0, inbuf, ninbytes, sha_hash_buf, &hash_len);
+    memcpy(resbuf, sha_hash_buf, noutbytes);
+}
 
 //A fixed-key hashing scheme that uses AES, should not be used for real hashing, hashes to AES_BYTES bytes
 void crypto::fixed_key_aes_hash(AES_KEY_CTX* aes_key, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes) {
@@ -394,6 +405,68 @@ void crypto::free_prf_state(prf_state_ctx* prf_state) {
 	clean_aes_key(&(prf_state->aes_key));
 }
 
+
+#define MAX_DEV_NUM 66
+char *cap_dev_name[MAX_DEV_NUM] = 
+{
+    "rsp_dev_01", "rsp_dev_02", "rsp_dev_03", "rsp_dev_04", "rsp_dev_05", "rsp_dev_06", "rsp_dev_07", "rsp_dev_08",
+    "rsp_dev_09", "rsp_dev_10", "rsp_dev_11", "rsp_dev_12", "rsp_dev_13", "rsp_dev_14", "rsp_dev_15", "rsp_dev_16",
+    "rsp_dev_17", "rsp_dev_18", "rsp_dev_19", "rsp_dev_20", "rsp_dev_21", "rsp_dev_22", "rsp_dev_23", "rsp_dev_24",
+    "rsp_dev_25", "rsp_dev_26", "rsp_dev_27", "rsp_dev_28", "rsp_dev_29", "rsp_dev_30", "rsp_dev_31", "rsp_dev_32",
+    "rsp_dev_33", "rsp_dev_34", "rsp_dev_35", "rsp_dev_36", "rsp_dev_37", "rsp_dev_38", "rsp_dev_39", "rsp_dev_40", 
+    "rsp_dev_41", "rsp_dev_42", "rsp_dev_43", "rsp_dev_44", "rsp_dev_45", "rsp_dev_46", "rsp_dev_47", "rsp_dev_48", 
+    "rsp_dev_49", "rsp_dev_50", "rsp_dev_51", "rsp_dev_52", "rsp_dev_53", "rsp_dev_54", "rsp_dev_55", "rsp_dev_56", 
+    "rsp_dev_57", "rsp_dev_58", "rsp_dev_59", "rsp_dev_60", "rsp_dev_61", "rsp_dev_62", "rsp_dev_63", "rsp_dev_64",
+    "rsp_dev_65", "rsp_dev_66" 
+};
+
+#define POLL_WAIT_US                    1
+#define SEND_PKG_WAIT_US                10
+
+
+int crypto::open_device(int devno, int ndevtd)
+{
+	int ret = 0;
+
+	memset(&dev_mngt, 0, sizeof(dev_mngt));
+
+	for (int i = 0; i < ndevtd; ++i)
+	{
+		ret = cap_open_device(cap_dev_name[devno-1], &dev_mngt.hdev[i], POLL_WAIT_US);
+		if (ret != CAP_RET_SUCCESS)
+		{
+			printf("Device Open Filed.\n");
+			exit(0);
+		}
+
+		dev_mngt.handle_cnt = i+1;
+		dev_mngt.thread_num = i+1;
+	}
+
+	hw_on = 1;
+
+	return;
+}
+
+int crypto::close_device()
+{
+	int ret = 0;
+
+	for (int i = 0; i < dev_mngt.handle_cnt; ++i)
+	{
+		ret = cap_close_device(dev_mngt.hdev[i]);
+
+		if (ret != CAP_RET_SUCCESS)
+		{
+			printf("Device Close Filed.\n");
+			exit(0);
+		}
+	}
+
+	hw_on = 0;
+
+	return;
+}
 
 void sha1_hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes, uint8_t* hash_buf) {
 	SHA_CTX sha;

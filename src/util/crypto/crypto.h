@@ -24,6 +24,8 @@
 #include "intrin_sequential_enc8.h"
 #include <mutex>
 
+#include "hw-mngt.h"
+
 
 #define AES_BYTES 16
 #define AES_BITS AES_BYTES*8
@@ -87,6 +89,7 @@ public:
 	//Hash routines
 	void hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes);
 	void hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes, uint8_t* tmpbuf);
+	void hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes);
 	void hash_ctr(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes, uint64_t ctr);
 	void fixed_key_aes_hash(AES_KEY_CTX* aes_key, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes);
 	void fixed_key_aes_hash_ctr(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes);
@@ -138,6 +141,16 @@ private:
 	uint8_t* sha_hash_buf;
 
 	void (*hash_routine)(uint8_t*, uint32_t, uint8_t*, uint32_t, uint8_t*);
+
+	//
+public:
+	uint32_t hw_on = 0;
+
+	devmngt_t dev_mngt;
+
+	int open_device(int devno, int ndevtd);
+	int close_device();
+
 };
 
 

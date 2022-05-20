@@ -29,7 +29,10 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 
 	mbfac=1024*1024;
 
-	read_psi_demo_options(&argc, &argv, &role, &protocol, &filename, &address, &nelements, &detailed_timings);
+	bool enable_dev = false;
+
+	//read_psi_demo_options(&argc, &argv, &role, &protocol, &filename, &address, &nelements, &detailed_timings);
+	read_psi_demo_options(&argc, &argv, &role, &protocol, &filename, &address, &nelements, &detailed_timings, &enable_dev);
 
 	if(role == SERVER) {
 		if(protocol == TTP) {
@@ -60,6 +63,11 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 	}
 
 	crypto crypto(symsecbits, (uint8_t*) const_seed);
+
+	if (enable_dev)
+	{
+		crypto.open_device(1, 64);
+	}
 
 	switch(protocol) {
 	case NAIVE:
@@ -120,6 +128,12 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 		cout << "Data received:\t" << ((double)bytes_received)/mbfac << " MB" << endl;
 	}
 
+	//
+	if (enable_dev)
+	{
+		crypto.close_device();
+	}
+
 
 	for(i = 0; i < nelements; i++)
 		free(elements[i]);
@@ -175,6 +189,34 @@ int32_t read_psi_demo_options(int32_t* argcp, char*** argvp, role_type* role, ps
 			{(void*) address, T_STR, 'a', "Server IP-address (needed by both, client and server)", false, false},
 			{(void*) nelements, T_NUM, 'n', "Number of elements", false, false},
 			{(void*) detailed_timings, T_FLAG, 't', "Flag: Enable detailed timings", false, false}
+	};
+
+	if(!parse_options(argcp, argvp, options, sizeof(options)/sizeof(parsing_ctx))) {
+		print_usage(argvp[0][0], options, sizeof(options)/sizeof(parsing_ctx));
+		exit(0);
+	}
+
+	assert(int_role < 2);
+	*role = (role_type) int_role;
+
+	assert(int_protocol < PROT_LAST);
+	*protocol = (psi_prot) int_protocol;
+
+	return 1;
+}
+
+
+int32_t read_psi_demo_options(int32_t* argcp, char*** argvp, role_type* role, psi_prot* protocol, string* filename, string* address,
+		uint32_t* nelements, bool* detailed_timings, bool* enable_dev)
+{
+	uint32_t int_role, int_protocol = 0;
+	parsing_ctx options[] = {{(void*) &int_role, T_NUM, 'r', "Role: 0/1", true, false},
+			{(void*) &int_protocol, T_NUM, 'p', "PSI protocol (0: Naive, 1: TTP, 2: DH, 3: OT)", true, false},
+			{(void*) filename, T_STR, 'f', "Input file", true, false},
+			{(void*) address, T_STR, 'a', "Server IP-address (needed by both, client and server)", false, false},
+			{(void*) nelements, T_NUM, 'n', "Number of elements", false, false},
+			{(void*) detailed_timings, T_FLAG, 't', "Flag: Enable detailed timings", false, false},
+			{(void*) enable_dev, T_FLAG, 'd', "Flag: Enable device", false, false}
 	};
 
 	if(!parse_options(argcp, argvp, options, sizeof(options)/sizeof(parsing_ctx))) {

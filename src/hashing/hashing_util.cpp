@@ -14,6 +14,10 @@ typedef struct hash_entry_gen_ctx
 
     crypto *crypt;
 
+    //
+    uint32_t hblkid;
+    void *hdev;
+
 } heg_ctx;
 
 void domain_hashing(uint32_t nelements, uint8_t **elements, uint32_t *elebytelens, uint8_t *result,
@@ -29,11 +33,20 @@ void domain_hashing(uint32_t nelements, uint8_t **elements, uint32_t *elebytelen
     cout << "Hashing " << nelements << " elements with arbitrary length into into " << resultbytelen << " bytes" << endl;
 #endif
 
+    if (crypt->hw_on)
+    {
+        nhash_tasks = crypt->dev_mngt.thread_num;
+    }
+
     entry_gen_hash_tasks = (pthread_t *)malloc(sizeof(pthread_t) * nhash_tasks);
     ctx = (heg_ctx *)malloc(sizeof(heg_ctx) * nhash_tasks);
 
     for (i = 0; i < nhash_tasks; i++)
     {
+        // ctx[i].hdev = crypt->dev_mngt.hdev[i];
+
+        ctx[i].hblkid = i;
+
         ctx[i].eleptr = elements;
         ctx[i].elebytelens = elebytelens;
         ctx[i].resultbytelen = resultbytelen;
@@ -63,13 +76,13 @@ void domain_hashing(uint32_t nelements, uint8_t **elements, uint32_t *elebytelen
     free(entry_gen_hash_tasks);
 }
 
-void *gen_hash_routine(void * ctx_tmp)
+void *gen_hash_routine(void *ctx_tmp)
 {
     uint32_t i, j, resultbytelen;
 
-    uint8_t ** elements = NULL, * resultptr = NULL;
-    uint32_t * elebytelens = NULL;
-    heg_ctx* ctx = (heg_ctx*) ctx_tmp;
+    uint8_t **elements = NULL, *resultptr = NULL;
+    uint32_t *elebytelens = NULL;
+    heg_ctx *ctx = (heg_ctx *)ctx_tmp;
 
     //
     elements = ctx->eleptr;
@@ -77,13 +90,26 @@ void *gen_hash_routine(void * ctx_tmp)
     resultbytelen = ctx->resultbytelen;
     resultptr = ctx->resultptr + ctx->resultbytelen * ctx->startpos;
     // hash_buf = (uint8_t*) calloc(crypt->get_hash_bytes(), sizeof(uint8_t));
+
+    if (ctx->crypt->hw_on == 1)
+    {
+        for (i = ctx->startpos; i < ctx->endpos; i++, resultptr += ctx->resultbytelen)
+        {
+            ctx->crypt->hash_hw(&ctx->crypt->dev_mngt.hdev[ctx->hblkid], resultptr, ctx->resultbytelen, elements[i], elebytelens[i]);
+        }
+    }
+    else
+    {
+        for (i = ctx->startpos; i < ctx->endpos; i++, resultptr += ctx->resultbytelen)
+        {
+            ctx->crypt->hash(resultptr, ctx->resultbytelen, elements[i], elebytelens[i]);
+        }
+    }
+
+//#define PRINT_DOMAIN_HASHING
+#ifdef PRINT_DOMAIN_HASHING
     for (i = ctx->startpos; i < ctx->endpos; i++, resultptr += ctx->resultbytelen)
     {
-
-        ctx->crypt->hash(resultptr, ctx->resultbytelen, elements[i], elebytelens[i]);
-
-#define PRINT_DOMAIN_HASHING
-#ifdef PRINT_DOMAIN_HASHING
         cout << "Hash for element " << i << " ";
         for (j = 0; j < elebytelens[i]; j++)
         {
@@ -95,9 +121,9 @@ void *gen_hash_routine(void * ctx_tmp)
             cout << (hex) << (uint32_t)resultptr[j] << (dec);
         }
         cout << endl;
+    }
 #endif
 #undef PRINT_DOMAIN_HASHING
-    }
 
     return NULL;
 }
