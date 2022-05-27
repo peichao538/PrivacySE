@@ -38,6 +38,7 @@ struct sym_ctx {
 };
 
 struct asym_ctx {
+	crypto* asymcrypt;
 	num* exponent;
 	pk_crypto* field;
 	bool sample;
@@ -125,6 +126,8 @@ static void *asym_encrypt(void* context) {
 	uint8_t *inptr=electx.input1d, *outptr=electx.output;
 	uint32_t i;
 
+	asym_ctx hdata = ((task_ctx*) context)->actx;
+	crypto* crypt_env = hdata.asymcrypt;
 
 	for(i = 0; i < electx.nelements; i++, inptr+=electx.fixedbytelen, outptr+=electx.outbytelen) {
 		if(((task_ctx*) context)->actx.sample) {
@@ -139,7 +142,14 @@ static void *asym_encrypt(void* context) {
 		tmpfe->print();
 #endif
 
-		tmpfe->set_pow(tmpfe, e);
+		if (1 == crypt_env->hw_on)
+		{
+			crypt_env->sm2_set_pow(crypt_env->dev_mngt.hdev[0], e, tmpfe, tmpfe);
+		}
+		else
+		{
+			tmpfe->set_pow(tmpfe, e);
+		}
 
 #ifdef DEBUG
 		tmpfe->print();

@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <unistd.h>
 
-//#include "../../../../SudoPPA/sdk/api/api.h"
-//#include "../../../../SudoPPA/sdk/cap/cap.h"
+
+#include "../../../../SudoPPA/sdk/cap/cap.h"
 #include "../../../../SudoPPA/library/sdf/sdf.h"
 
 

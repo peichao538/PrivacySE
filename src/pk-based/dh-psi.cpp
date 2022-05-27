@@ -92,6 +92,7 @@ uint32_t dhpsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx, c
 	ectx.actx.field = field;
 	ectx.actx.exponent = exponent;
 	ectx.actx.sample = true;
+	ectx.actx.asymcrypt = crypt_env;
 
 #ifdef DEBUG
 	cout << "Hash and encrypting my elements" << endl;

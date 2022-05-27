@@ -151,6 +151,7 @@ public:
 
 	int open_device(int devno, int ndevtd);
 	int close_device();
+	void sm2_set_pow(void * hdev, num* k, fe* p, fe* q);
 
 };
 

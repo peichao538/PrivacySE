@@ -8,6 +8,9 @@
 
 #include "crypto.h"
 
+#include "../../externals/miracl_lib/ecn.h"
+#include "../../externals/miracl_lib/big.h"
+
 crypto::crypto(uint32_t symsecbits, uint8_t* seed) {
 	init(symsecbits, seed);
 }
@@ -279,21 +282,67 @@ void crypto::hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t 
 	hash_routine(resbuf, noutbytes, inbuf, ninbytes, tmpbuf);
 }
 
-void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes) {
+void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes)
+{
 
-	// cap_hash_ctx_t cap_hash_ctx;
+	cap_hash_ctx_t cap_hash_ctx;
 	uint32_t hash_len = 0;
 
-	// cap_hash_ctx.hdev = hdev;
-	// cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
+	cap_hash_ctx.hdev = hdev;
+	cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
 
-	// cap_hash_onetime(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0, inbuf, ninbytes, sha_hash_buf, &hash_len);
+	cap_hash_onetime(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0, inbuf, ninbytes, sha_hash_buf, &hash_len);
 
-	SDF_HashInit(hdev, SGD_SM3, NULL, NULL, 0);
-	SDF_HashUpdate(hdev, inbuf, ninbytes);
-	SDF_HashFinal(hdev, sha_hash_buf, &hash_len);
+	// SDF_HashInit(hdev, SGD_SM3, NULL, NULL, 0);
+	// SDF_HashUpdate(hdev, inbuf, ninbytes);
+	// SDF_HashFinal(hdev, sha_hash_buf, &hash_len);
 
     memcpy(resbuf, sha_hash_buf, noutbytes);
+}
+
+void crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
+{
+
+	Big x;
+	Big y;
+
+	//
+	cap_ecc_ctx_t cap_ecc_ctx;
+	memset(&cap_ecc_ctx, 0, sizeof(cap_ecc_ctx_t));
+
+	//cap_ecc_pubkey_t result_point;
+	//result_point.bits = 256;
+    //memset(&result_point, 0, sizeof(cap_ecc_pubkey_t));
+
+    cap_ecc_ctx.hdev = hdev;
+    cap_ecc_ctx.curve_id = CAP_CURVE_SM2;
+    cap_ecc_ctx.sess.mode = CAP_SYNC_MODE;
+
+
+	cap_ecc_ctx.prikey.bits = 256;
+	big_to_bytes(32, sm_num2Big(k)->getbig(), (char *)cap_ecc_ctx.prikey.k, true);
+
+
+	fe2ecn(p)->getxy(x, y);
+    cap_ecc_ctx.pubkey.bits = 256;
+	big_to_bytes(32, x.getbig(), (char *)(cap_ecc_ctx.pubkey.x), true);
+	big_to_bytes(32, y.getbig(), (char *)(cap_ecc_ctx.pubkey.y), true);
+
+
+	cap_ecc_pubkey_t result_point;
+	result_point.bits = 256;
+	while (CAP_RET_BUSY == cap_ecc_kp(&cap_ecc_ctx, &result_point))
+    //while (CAP_RET_BUSY == cap_ecc_kp(&cap_ecc_ctx, (cap_ecc_pubkey_t *)resbuf))
+    {
+        usleep(10);
+    }
+
+	bytes_to_big(32, (char *)(result_point.x), x.getbig());
+	bytes_to_big(32, (char *)(result_point.y), y.getbig());
+
+	*fe2ecn(p) = ECn(x, y);
+
+	return ;
 }
 
 //A fixed-key hashing scheme that uses AES, should not be used for real hashing, hashes to AES_BYTES bytes
@@ -433,24 +482,43 @@ void crypto::free_prf_state(prf_state_ctx* prf_state) {
 int crypto::open_device(int devno, int ndevtd)
 {
 	int ret = 0;
+	uint32_t num = 0;
 
-	memset(&dev_mngt, 0, sizeof(dev_mngt));
+	memset(&dev_mngt, 0, sizeof(devmngt_t));
 
+	//
+	cap_get_device_number(&num);
+
+    char *dev_name = (char *)malloc(num * 128);
+    uint32_t dev_name_len = num * 128;
+
+	//
+    cap_enum_device(dev_name, dev_name_len);
 
 	for (int i = 0; i < ndevtd; ++i)
 	{
-		// ret = cap_open_device(cap_dev_name[devno-1], &dev_mngt.hdev[i], POLL_WAIT_US);
+		cap_open_device(dev_name, &dev_mngt.hdev[i], 10);
+
 		// if (ret != CAP_RET_SUCCESS)
 		// {
-		// 	printf("Device Open Filed.\n");
-		// 	exit(0);
+		// 		printf("Device Open Filed.\n");
+		//  	exit(0);
 		// }
-		SDF_OpenDevice(&dev_mngt.hdev[i]);
-		SDF_OpenSession(dev_mngt.hdev[i], &dev_mngt.hsess[i]);
 
 		dev_mngt.handle_cnt = i+1;
 		dev_mngt.thread_num = i+1;
-	}
+	} 
+
+	free(dev_name);
+
+	// for (int i = 0; i < ndevtd; ++i)
+	// {
+	// 	SDF_OpenDevice(&dev_mngt.hdev[i]);
+	// 	SDF_OpenSession(dev_mngt.hdev[i], &dev_mngt.hsess[i]);
+
+	// 	dev_mngt.handle_cnt = i+1;
+	// 	dev_mngt.thread_num = i+1;
+	// }
 
 	hw_on = 1;
 
@@ -463,17 +531,15 @@ int crypto::close_device()
 
 	for (int i = 0; i < dev_mngt.handle_cnt; ++i)
 	{
-		// ret = cap_close_device(dev_mngt.hdev[i]);
+		ret = cap_close_device(dev_mngt.hdev[i]);
 
-		// if (ret != CAP_RET_SUCCESS)
-		// {
-		// 	printf("Device Close Filed.\n");
-		// 	exit(0);
-		// }
-
-		SDF_CloseSession(dev_mngt.hsess[i]);
-		SDF_CloseDevice(dev_mngt.hdev[i]);
 	}
+
+	// for (int i = 0; i < dev_mngt.handle_cnt; ++i)
+	// {
+	// 	SDF_CloseSession(dev_mngt.hsess[i]);
+	// 	SDF_CloseDevice(dev_mngt.hdev[i]);
+	// }
 
 	hw_on = 0;
 
