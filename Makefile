@@ -23,9 +23,12 @@ GNU_LIB_PATH:=i386
 endif
 
 INCLUDE=-I..  -I/usr/include/glib-2.0/ -I/usr/lib/${GNU_LIB_PATH}-linux-gnu/glib-2.0/include `pkg-config --cflags glib-2.0`
-
-
 LIBRARIES=-lgmp -lgmpxx -lpthread  -L /usr/lib  -lssl -lcrypto -lglib-2.0 `pkg-config --libs glib-2.0`
+
+SDF_DIR = ../SudoPPA/library/sdf
+LIB_SDF = -L$(SDF_DIR) -l:libsdf.a -ldl -lpthread
+LIBRARIES+= $(LIB_SDF) -I$(SDF_DIR)
+
 CFLAGS=
 
 # all source files and corresponding object files 

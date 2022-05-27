@@ -30,5 +30,8 @@ void read_elements(uint8_t*** elements, uint32_t** elebytelens, uint32_t* neleme
 int32_t read_psi_demo_options(int32_t* argcp, char*** argvp, role_type* role, psi_prot* protocol, string* filename, string* address,
 		uint32_t* nelements, bool* detailed_timings);
 
+int32_t read_psi_demo_options(int32_t* argcp, char*** argvp, role_type* role, psi_prot* protocol, string* filename, string* address,
+		uint32_t* nelements, bool* detailed_timings, bool* enable_dev);
+
 
 #endif /* DEMONSTRATOR_H_ */

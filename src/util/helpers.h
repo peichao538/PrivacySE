@@ -133,10 +133,21 @@ static void *asym_encrypt(void* context) {
 		} else {
 			tmpfe->import_from_bytes(inptr);
 		}
+
+#ifdef DEBUG		
+		e->print();		
+		tmpfe->print();
+#endif
+
 		tmpfe->set_pow(tmpfe, e);
-		//tmpfe->print();
+
+#ifdef DEBUG
+		tmpfe->print();
+#endif
 		tmpfe->export_to_bytes(outptr);
 	}
+
+	delete tmpfe;
 
 	return 0;
 }
@@ -194,17 +205,36 @@ static void *psi_hashing_function(void* context) {
 	uint32_t i;
 	uint8_t* tmphashbuf = (uint8_t*) malloc(crypt_env->get_hash_bytes());
 
-	if(electx.hasvarbytelen) {
-		uint8_t **inptr = electx.input2d;
-		for(i = electx.startelement; i < electx.endelement; i++) {
-			crypt_env->hash(electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr[i], electx.varbytelens[i], tmphashbuf);
-		}
-	} else {
-		uint8_t *inptr = electx.input1d;
-		for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
-			crypt_env->hash(electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr, electx.fixedbytelen, tmphashbuf);
+	if (1 == crypt_env->hw_on)
+	{
+		if(electx.hasvarbytelen) {
+			uint8_t **inptr = electx.input2d;
+			for(i = electx.startelement; i < electx.endelement; i++) {
+				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[0], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr[i], electx.varbytelens[i]);
+			}
+		} else {
+			uint8_t *inptr = electx.input1d;
+			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
+				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[0], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr, electx.fixedbytelen);
+			}
 		}
 	}
+	else
+	{
+		if(electx.hasvarbytelen) {
+			uint8_t **inptr = electx.input2d;
+			for(i = electx.startelement; i < electx.endelement; i++) {
+				crypt_env->hash(electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr[i], electx.varbytelens[i], tmphashbuf);
+			}
+		} else {
+			uint8_t *inptr = electx.input1d;
+			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
+				crypt_env->hash(electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr, electx.fixedbytelen, tmphashbuf);
+			}
+		}
+	}
+
+
 	free(tmphashbuf);
 	return 0;
 }
@@ -297,6 +327,13 @@ static uint32_t find_intersection(uint8_t* hashes, uint32_t neles, uint8_t* phas
 		}
 	}
 
+	if (map)
+	{
+		g_hash_table_remove_all(map);
+		g_hash_table_destroy(map);
+		map = NULL;
+	}
+	
 	size_intersect = intersect_ctr;
 
 	free(invperm);

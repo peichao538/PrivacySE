@@ -24,6 +24,7 @@
 #include "intrin_sequential_enc8.h"
 #include <mutex>
 
+#include "ecc-sm-crypto.h"
 #include "hw-mngt.h"
 
 

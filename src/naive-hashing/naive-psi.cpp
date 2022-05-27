@@ -17,7 +17,10 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* ele
 
 	uint32_t intersect_size = naivepsi(role, neles, pneles, ectx, crypt_env, sock, ntasks, matches);
 
-	create_result_from_matches_var_bitlen(result, resbytelens, elebytelens, elements, matches, intersect_size);
+	if(role == CLIENT) 
+	{
+		create_result_from_matches_var_bitlen(result, resbytelens, elebytelens, elements, matches, intersect_size);
+	}
 
 	free(matches);
 

@@ -17,7 +17,10 @@ uint32_t dhpsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* elebyt
 
 	uint32_t intersect_size = dhpsi(role, neles, pneles, ectx, crypt_env, sock, ntasks, matches, cardinality, ftype);
 
-	create_result_from_matches_var_bitlen(result, resbytelens, elebytelens, elements, matches, intersect_size);
+	if(role == CLIENT) 
+	{
+		create_result_from_matches_var_bitlen(result, resbytelens, elebytelens, elements, matches, intersect_size);
+	}
 
 	free(matches);
 
@@ -169,6 +172,10 @@ uint32_t dhpsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx, c
 #ifdef DEBUG
 	cout << "Free-ing allocated memory" << endl;
 #endif
+
+	delete field;
+	delete exponent;
+
 	free(perm);
 	free(encrypted_eles);
 	free(hashes);
