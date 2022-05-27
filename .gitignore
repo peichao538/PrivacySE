@@ -67,3 +67,8 @@ dkms.conf
 
 #
 .vscode/
+*.log
+
+#
+src/externals/miracl_lib/
+
