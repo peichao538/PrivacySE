@@ -20,7 +20,7 @@ This code is provided as a experimental implementation for testing purposes and 
 
 * A **Linux distribution** of your choice (the code was developed and tested with recent versions of [Ubuntu](http://www.ubuntu.com/)).
 * **Required packages:**
-  * [`g++`](https://packages.debian.org/testing/g++)
+  * [`g++ 9.0+`](https://packages.debian.org/testing/g++)
   * [`make`](https://packages.debian.org/testing/make)
   * [`libgmp-dev`](https://packages.debian.org/testing/libgmp-dev)
   * [`libglib2.0-dev`](https://packages.debian.org/testing/libglib2.0-dev)
