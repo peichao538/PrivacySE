@@ -216,7 +216,7 @@ int32_t read_psi_demo_options(int32_t* argcp, char*** argvp, role_type* role, ps
 			{(void*) address, T_STR, 'a', "Server IP-address (needed by both, client and server)", false, false},
 			{(void*) nelements, T_NUM, 'n', "Number of elements", false, false},
 			{(void*) detailed_timings, T_FLAG, 't', "Flag: Enable detailed timings", false, false},
-			{(void*) enable_dev, T_FLAG, 'd', "Flag: Enable device", false, false}
+			{(void*) enable_dev, T_FLAG, 'b', "Flag: Enable device", false, false}
 	};
 
 	if(!parse_options(argcp, argvp, options, sizeof(options)/sizeof(parsing_ctx))) {

@@ -31,11 +31,18 @@ int32_t benchroutine(int32_t argc, char** argv) {
 
 	mbfac=1024*1024;
 
+	bool enable_dev = false;
+
+	// read_bench_options(&argc, &argv, &role, &nelements, &elebytelen, &symsecbits,
+	// 		&address, &port, &ntasks, &protocol, &nclients, &epsilon, &cardinality, &ftype,
+	// 		&detailed_timings);
+
 	read_bench_options(&argc, &argv, &role, &nelements, &elebytelen, &symsecbits,
 			&address, &port, &ntasks, &protocol, &nclients, &epsilon, &cardinality, &ftype,
-			&detailed_timings);
-
+			&detailed_timings, &enable_dev);
+			
 	sockfd.resize(ntasks + 1);
+	
 	if(role == SERVER) {
 		if(protocol == TTP) {
 			ntasks = nclients;
@@ -48,6 +55,11 @@ int32_t benchroutine(int32_t argc, char** argv) {
 	}
 
 	crypto crypto(symsecbits, (uint8_t*) const_seed);
+
+	if (enable_dev)
+	{
+		crypto.open_device(1, 64);
+	}
 
 	//exchange number of items, bit-length of items, symmetric security parameter and protocol to make sure the parameters are correct
 	if(protocol != TTP) {
@@ -93,6 +105,12 @@ int32_t benchroutine(int32_t argc, char** argv) {
 	}
 	gettimeofday(&end, NULL);
 
+	//
+	if (enable_dev)
+	{
+		crypto.close_device();
+	}
+
 	for(i = 0; i < sockfd.size(); i++) {
 		bytes_sent += sockfd[i].get_bytes_sent();
 		bytes_received += sockfd[i].get_bytes_received();
@@ -128,7 +146,7 @@ int32_t benchroutine(int32_t argc, char** argv) {
 
 int32_t read_bench_options(int32_t* argcp, char*** argvp, role_type* role, uint32_t* nelements, uint32_t* bytelen,
 		uint32_t* secparam, string* address, uint16_t* port, uint32_t* ntasks, psi_prot* protocol, uint32_t* nclients,
-		double* epsilon, bool* cardinality, field_type* ftype, bool* detailed_timings) {
+		double* epsilon, bool* cardinality, field_type* ftype, bool* detailed_timings, bool* enable_dev) {
 
 	uint32_t int_role=0, int_port=0, int_protocol=0;
 	bool useffc=false;
@@ -145,7 +163,8 @@ int32_t read_bench_options(int32_t* argcp, char*** argvp, role_type* role, uint3
 			{(void*) epsilon, T_DOUBLE, 'e', "Epsilon in Cuckoo hashing", false, false},
 			{(void*) cardinality, T_FLAG, 'y', "Compute cardinality (only for DH and TTP PSI)", false, false},
 			{(void*) &useffc, T_FLAG, 'f', "Use finite-field cryptography", false, false},
-			{(void*) detailed_timings, T_FLAG, 'd', "Flag: Enable Detailed Timings", false, false}
+			{(void*) detailed_timings, T_FLAG, 'd', "Flag: Enable Detailed Timings", false, false},
+			{(void*) enable_dev, T_FLAG, 'b', "Flag: Enable Enable device", false, false}
 	};
 
 	if(!parse_options(argcp, argvp, options, sizeof(options)/sizeof(parsing_ctx))) {

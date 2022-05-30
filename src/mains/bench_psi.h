@@ -34,5 +34,8 @@ int32_t read_bench_options(int32_t* argcp, char*** argvp, role_type* role, uint3
 		uint32_t* secparam, string* address, uint16_t* port, uint32_t* ntasks, psi_prot* protocol, uint32_t* nclients,
 		double* epsilon, bool* cardinality, field_type* ftype, bool* detailed_timings);
 
+int32_t read_bench_options(int32_t* argcp, char*** argvp, role_type* role, uint32_t* nelements, uint32_t* bytelen,
+		uint32_t* secparam, string* address, uint16_t* port, uint32_t* ntasks, psi_prot* protocol, uint32_t* nclients,
+		double* epsilon, bool* cardinality, field_type* ftype, bool* detailed_timings, bool* enable_dev);
 
 #endif /* BENCH_PSI_H_ */
