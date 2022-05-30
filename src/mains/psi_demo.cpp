@@ -66,7 +66,7 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 
 	if (enable_dev)
 	{
-		crypto.open_device(1, 64);
+		crypto.open_device(1, 128);
 	}
 
 	switch(protocol) {

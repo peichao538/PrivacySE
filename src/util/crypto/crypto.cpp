@@ -285,19 +285,29 @@ void crypto::hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t 
 void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes)
 {
 
+	int ret = 0;
 	cap_hash_ctx_t cap_hash_ctx;
 	uint32_t hash_len = 0;
+
+	uint8_t* tmpbuf = (uint8_t*) malloc(32);
+
+	memset(&cap_hash_ctx, 0, sizeof(cap_hash_ctx_t));
 
 	cap_hash_ctx.hdev = hdev;
 	cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
 
-	cap_hash_onetime(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0, inbuf, ninbytes, sha_hash_buf, &hash_len);
+	// ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0);
+	// ret = cap_hash_onetime(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0, inbuf, ninbytes, sha_hash_buf, &hash_len);
+	ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0);
+	ret = cap_hash_onetime(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0, inbuf, ninbytes, tmpbuf, &hash_len);
 
 	// SDF_HashInit(hdev, SGD_SM3, NULL, NULL, 0);
 	// SDF_HashUpdate(hdev, inbuf, ninbytes);
 	// SDF_HashFinal(hdev, sha_hash_buf, &hash_len);
 
-    memcpy(resbuf, sha_hash_buf, noutbytes);
+    memcpy(resbuf, tmpbuf, noutbytes);
+	
+	free(tmpbuf);
 }
 
 void crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
@@ -497,13 +507,13 @@ int crypto::open_device(int devno, int ndevtd)
 
 	for (int i = 0; i < ndevtd; ++i)
 	{
-		cap_open_device(dev_name, &dev_mngt.hdev[i], 10);
+		ret = cap_open_device(dev_name, &dev_mngt.hdev[i], 10);
 
-		// if (ret != CAP_RET_SUCCESS)
-		// {
-		// 		printf("Device Open Filed.\n");
-		//  	exit(0);
-		// }
+		if (ret != CAP_RET_SUCCESS)
+		{
+			printf("Device Open Filed.\n");
+		 	exit(0);
+		}
 
 		dev_mngt.handle_cnt = i+1;
 		dev_mngt.thread_num = i+1;

@@ -95,7 +95,7 @@ void *gen_hash_routine(void *ctx_tmp)
     {
         for (i = ctx->startpos; i < ctx->endpos; i++, resultptr += ctx->resultbytelen)
         {
-            ctx->crypt->hash_hw(&ctx->crypt->dev_mngt.hdev[ctx->hblkid], resultptr, ctx->resultbytelen, elements[i], elebytelens[i]);
+            ctx->crypt->hash_hw(ctx->crypt->dev_mngt.hdev[ctx->hblkid], resultptr, ctx->resultbytelen, elements[i], elebytelens[i]);
         }
     }
     else

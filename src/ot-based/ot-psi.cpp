@@ -440,6 +440,10 @@ void oprg_client(uint8_t* hash_table, uint32_t nbins, uint32_t neles, uint32_t* 
 			maskbitlen << " and performs " << nbins << " OTs" << endl;
 #endif
 
+	if(DETAILED_TIMINGS) {
+		gettimeofday(&t_start, NULL);
+	}
+
 	//receiver = new KKOTExtRcv(m_nCodeWordBits, elebitlen, crypt, sock);
 	std::unique_ptr<KKOTExtRcv> receiver = std::make_unique<KKOTExtRcv>(m_nCodeWordBits, elebitlen, crypt, sock);
 
@@ -497,6 +501,10 @@ void oprg_server(uint8_t* hash_table, uint32_t nbins, uint32_t totaleles, uint32
 			maskbitlen << " and performs " << nbins << " OTs" << endl;
 #endif
 
+	if(DETAILED_TIMINGS) {
+		gettimeofday(&t_start, NULL);
+	}
+	
 	//sender = new KKOTExtSnd(m_nCodeWordBits, elebitlen, crypt, sock);
 	std::unique_ptr<KKOTExtSnd> sender = std::make_unique<KKOTExtSnd>(m_nCodeWordBits, elebitlen, crypt, sock);
 
