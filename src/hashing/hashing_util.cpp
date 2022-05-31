@@ -89,13 +89,13 @@ void *gen_hash_routine(void *ctx_tmp)
     elebytelens = ctx->elebytelens;
     resultbytelen = ctx->resultbytelen;
     resultptr = ctx->resultptr + ctx->resultbytelen * ctx->startpos;
-    // hash_buf = (uint8_t*) calloc(crypt->get_hash_bytes(), sizeof(uint8_t));
+    uint8_t* hash_buf = (uint8_t*) malloc(ctx->crypt->get_hash_bytes());
 
     if (ctx->crypt->hw_on == 1)
     {
         for (i = ctx->startpos; i < ctx->endpos; i++, resultptr += ctx->resultbytelen)
         {
-            ctx->crypt->hash_hw(ctx->crypt->dev_mngt.hdev[ctx->hblkid], resultptr, ctx->resultbytelen, elements[i], elebytelens[i]);
+            ctx->crypt->hash_hw(ctx->crypt->dev_mngt.hdev[ctx->hblkid], resultptr, ctx->resultbytelen, elements[i], elebytelens[i], hash_buf);
         }
     }
     else
@@ -124,6 +124,8 @@ void *gen_hash_routine(void *ctx_tmp)
     }
 #endif
 #undef PRINT_DOMAIN_HASHING
+
+    free(hash_buf);
 
     return NULL;
 }

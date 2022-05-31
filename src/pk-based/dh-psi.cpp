@@ -97,7 +97,8 @@ uint32_t dhpsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx, c
 #ifdef DEBUG
 	cout << "Hash and encrypting my elements" << endl;
 #endif
-	run_task(ntasks, ectx, asym_encrypt);
+	// run_task(ntasks, ectx, asym_encrypt);
+	run_task_asym(ntasks, ectx, asym_encrypt);
 
 
 	peles = (uint8_t*) malloc(sizeof(uint8_t) * pneles * fe_bytes);
@@ -120,7 +121,8 @@ uint32_t dhpsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx, c
 #ifdef DEBUG
 	cout << "Encrypting partners elements" << endl;
 #endif
-	run_task(ntasks, ectx, asym_encrypt);
+	// run_task(ntasks, ectx, asym_encrypt);
+	run_task_asym(ntasks, ectx, asym_encrypt);
 
 	/* if only the cardinality should be computed, permute the elements randomly again. Otherwise don't permute */
 	if(cardinality) {

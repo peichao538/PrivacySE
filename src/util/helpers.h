@@ -50,6 +50,8 @@ struct task_ctx {
 		sym_ctx sctx;
 		asym_ctx actx;
 	};
+
+	uint32_t hblkid;
 };
 
 struct snd_ctx {
@@ -137,6 +139,7 @@ static void *asym_encrypt(void* context) {
 			tmpfe->import_from_bytes(inptr);
 		}
 
+#define DEBUG
 #ifdef DEBUG		
 		e->print();		
 		tmpfe->print();
@@ -145,6 +148,7 @@ static void *asym_encrypt(void* context) {
 		if (1 == crypt_env->hw_on)
 		{
 			crypt_env->sm2_set_pow(crypt_env->dev_mngt.hdev[0], e, tmpfe, tmpfe);
+			//crypt_env->sm2_set_pow(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], e, tmpfe, tmpfe);
 		}
 		else
 		{
@@ -154,6 +158,8 @@ static void *asym_encrypt(void* context) {
 #ifdef DEBUG
 		tmpfe->print();
 #endif
+#undef DEBUG
+
 		tmpfe->export_to_bytes(outptr);
 	}
 
@@ -220,12 +226,14 @@ static void *psi_hashing_function(void* context) {
 		if(electx.hasvarbytelen) {
 			uint8_t **inptr = electx.input2d;
 			for(i = electx.startelement; i < electx.endelement; i++) {
-				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[0], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr[i], electx.varbytelens[i]);
+				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
+				inptr[i], electx.varbytelens[i], tmphashbuf);
 			}
 		} else {
 			uint8_t *inptr = electx.input1d;
 			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
-				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[0], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr, electx.fixedbytelen);
+				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
+				inptr, electx.fixedbytelen, tmphashbuf);
 			}
 		}
 	}
@@ -276,18 +284,32 @@ static void snd_and_rcv(uint8_t* snd_buf, uint32_t snd_bytes, uint8_t* rcv_buf, 
 }
 
 static void run_task(uint32_t nthreads, task_ctx context, void* (*func)(void*) ) {
+
+	crypto * crypt = context.sctx.symcrypt;
+
+	if (crypt->hw_on)
+	{
+		nthreads = crypt->dev_mngt.thread_num;
+	}
+	
 	task_ctx* contexts = (task_ctx*) malloc(sizeof(task_ctx) * nthreads);
 	pthread_t* threads = (pthread_t*) malloc(sizeof(pthread_t) * nthreads);
 	uint32_t i, neles_thread, electr, neles_cur;
 	bool created, joined;
 
 	neles_thread = ceil_divide(context.eles.nelements, nthreads);
+
 	for(i = 0, electr = 0; i < nthreads; i++) {
+
 		neles_cur = min(context.eles.nelements - electr, neles_thread);
 		memcpy(contexts + i, &context, sizeof(task_ctx));
+
+		contexts[i].hblkid = i;
+
 		contexts[i].eles.nelements = neles_cur;
 		contexts[i].eles.startelement = electr;
 		contexts[i].eles.endelement = electr + neles_cur;
+
 		electr += neles_cur;
 	}
 
@@ -307,6 +329,51 @@ static void run_task(uint32_t nthreads, task_ctx context, void* (*func)(void*) )
 	free(contexts);
 }
 
+static void run_task_asym(uint32_t nthreads, task_ctx context, void* (*func)(void*) ) {
+
+	crypto * crypt = context.sctx.symcrypt;
+
+	// if (crypt->hw_on)
+	// {
+	// 	nthreads = crypt->dev_mngt.thread_num;
+	// }
+	
+	task_ctx* contexts = (task_ctx*) malloc(sizeof(task_ctx) * nthreads);
+	pthread_t* threads = (pthread_t*) malloc(sizeof(pthread_t) * nthreads);
+	uint32_t i, neles_thread, electr, neles_cur;
+	bool created, joined;
+
+	neles_thread = ceil_divide(context.eles.nelements, nthreads);
+
+	for(i = 0, electr = 0; i < nthreads; i++) {
+
+		neles_cur = min(context.eles.nelements - electr, neles_thread);
+		memcpy(contexts + i, &context, sizeof(task_ctx));
+
+		contexts[i].hblkid = i;
+
+		contexts[i].eles.nelements = neles_cur;
+		contexts[i].eles.startelement = electr;
+		contexts[i].eles.endelement = electr + neles_cur;
+
+		electr += neles_cur;
+	}
+
+	for(i = 0; i < nthreads; i++) {
+		created = !pthread_create(threads + i, NULL, func, (void*) &(contexts[i]));
+	}
+
+	assert(created);
+
+	for(i = 0; i < nthreads; i++) {
+		joined = !pthread_join(threads[i], NULL);
+	}
+
+	assert(joined);
+
+	free(threads);
+	free(contexts);
+}
 
 
 

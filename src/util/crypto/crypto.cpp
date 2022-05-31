@@ -282,14 +282,14 @@ void crypto::hash(uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t 
 	hash_routine(resbuf, noutbytes, inbuf, ninbytes, tmpbuf);
 }
 
-void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes)
+void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* inbuf, uint32_t ninbytes, uint8_t* tmpbuf)
 {
 
 	int ret = 0;
 	cap_hash_ctx_t cap_hash_ctx;
 	uint32_t hash_len = 0;
 
-	uint8_t* tmpbuf = (uint8_t*) malloc(32);
+	//uint8_t* tmpbuf = (uint8_t*) malloc(32);
 
 	memset(&cap_hash_ctx, 0, sizeof(cap_hash_ctx_t));
 
@@ -307,7 +307,7 @@ void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* 
 
     memcpy(resbuf, tmpbuf, noutbytes);
 	
-	free(tmpbuf);
+	//free(tmpbuf);
 }
 
 void crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
@@ -350,7 +350,7 @@ void crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
 	bytes_to_big(32, (char *)(result_point.x), x.getbig());
 	bytes_to_big(32, (char *)(result_point.y), y.getbig());
 
-	*fe2ecn(p) = ECn(x, y);
+	*fe2ecn(q) = ECn(x, y);
 
 	return ;
 }

@@ -1,11 +1,3 @@
-/*
- * psi_demo.cpp
- *
- *  Created on: May 20, 2015
- *      Author: mzohner
- */
-
-
 #include "psi_demo.h"
 
 int32_t main(int32_t argc, char** argv) {
