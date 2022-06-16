@@ -78,6 +78,10 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 		intersect_size = otpsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens,
 				&crypto, sockfd.data(), ntasks, epsilon, detailed_timings);
 		break;
+	case TEE_PSI:
+		intersect_size = teepsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens,
+				&crypto, sockfd.data(), ntasks);
+		break;
 	default:
 		intersect_size = otpsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens,
 				&crypto, sockfd.data(), ntasks, epsilon, detailed_timings);
