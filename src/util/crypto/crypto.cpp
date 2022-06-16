@@ -310,7 +310,131 @@ void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* 
 	//free(tmpbuf);
 }
 
-void crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
+int crypto::sm2_gen_key(void * hdev, uint8_t * keypair)
+{
+    int ret;
+    uint32_t outlen = 0;
+    cap_key_ctx_t key_ctx;
+
+    if(!hdev)
+        return SDR_INARGERR;
+
+    memset(&key_ctx, 0, sizeof(cap_key_ctx_t));
+
+	//
+	key_ctx.hdev = hdev;
+	key_ctx.bits = 256;
+	key_ctx.key_algo = CAP_KEY_PKE_SM2;
+	key_ctx.key_type = CAP_UEK_SM2;
+	key_ctx.location = CAP_KEY_HOST;
+
+	while((ret = cap_gen_key(&key_ctx, NULL, keypair, &outlen)) == CAP_RET_BUSY)
+    {
+        usleep(10);
+    }
+
+    return SDR_OK;
+}
+
+int crypto::sm2_set_pow(void * hdev, cap_ecc_prikey_t * k, cap_ecc_pubkey_t * p, cap_ecc_pubkey_t * q)
+{
+
+	if (!hdev || !k || !p || !q)
+    {
+        return SDR_INARGERR;
+    }
+
+    //
+    cap_ecc_ctx_t cap_ecc_ctx;
+    memset(&cap_ecc_ctx, 0, sizeof(cap_ecc_ctx_t));
+
+    cap_ecc_ctx.hdev = hdev;
+    cap_ecc_ctx.curve_id = CAP_CURVE_SM2;
+    cap_ecc_ctx.sess.mode = CAP_SYNC_MODE;
+
+    memcpy(&cap_ecc_ctx.prikey, k, sizeof(cap_ecc_prikey_t));
+    memcpy(&cap_ecc_ctx.pubkey, p, sizeof(cap_ecc_pubkey_t));
+
+    //
+    while (CAP_RET_BUSY == cap_ecc_kp(&cap_ecc_ctx, q))
+    {
+        usleep(10);
+    }
+
+	//
+	return SDR_OK;
+}
+
+int crypto::sm2_get_z(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t * pkey, uint8_t* inbuf, uint32_t ninbytes, uint8_t* tmpbuf)
+{
+	if (!hdev || !resbuf || !pkey || !inbuf || !tmpbuf)
+    {
+        return SDR_INARGERR;
+    }
+
+	const uint8_t * id = "1234567812345678";
+	uint32_t idlen = 16;
+
+	//
+	int ret = 0;
+	cap_hash_ctx_t cap_hash_ctx;
+	uint32_t hash_len = 0;
+
+	//uint8_t* tmpbuf = (uint8_t*) malloc(32);
+
+	memset(&cap_hash_ctx, 0, sizeof(cap_hash_ctx_t));
+
+	cap_hash_ctx.hdev = hdev;
+	cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
+
+	cap_ecc_pubkey_t * ptr_pubkey = (cap_ecc_pubkey_t*)pkey;
+
+	ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, ptr_pubkey, (uint8_t *)id, idlen);
+	ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes);
+	ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len);
+
+    memcpy(resbuf, tmpbuf, noutbytes);
+	
+	//free(tmpbuf);
+
+	//
+	return SDR_OK;
+}
+
+int crypto::hash_with_salt_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t * salt, uint32_t saltlen, uint8_t* inbuf, uint32_t ninbytes, uint8_t* tmpbuf)
+{
+	if (!hdev || !resbuf || !salt || !inbuf || !tmpbuf)
+    {
+        return SDR_INARGERR;
+    }
+
+	//
+	int ret = 0;
+	cap_hash_ctx_t cap_hash_ctx;
+	uint32_t hash_len = 0;
+
+	//uint8_t* tmpbuf = (uint8_t*) malloc(32);
+
+	memset(&cap_hash_ctx, 0, sizeof(cap_hash_ctx_t));
+
+	cap_hash_ctx.hdev = hdev;
+	cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
+
+	ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0);
+	//ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0);
+	ret = cap_hash_update(&cap_hash_ctx, salt, saltlen);
+	ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes);
+	ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len);
+
+    memcpy(resbuf, tmpbuf, noutbytes);
+	
+	//free(tmpbuf);
+
+	//
+	return SDR_OK;
+}
+
+int crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
 {
 
 	Big x;
@@ -352,7 +476,7 @@ void crypto::sm2_set_pow(void * hdev, num* k, fe* p, fe* q)
 
 	*fe2ecn(q) = ECn(x, y);
 
-	return ;
+	return SDR_OK;
 }
 
 //A fixed-key hashing scheme that uses AES, should not be used for real hashing, hashes to AES_BYTES bytes

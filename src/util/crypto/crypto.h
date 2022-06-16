@@ -151,7 +151,13 @@ public:
 
 	int open_device(int devno, int ndevtd);
 	int close_device();
-	void sm2_set_pow(void * hdev, num* k, fe* p, fe* q);
+
+	int sm2_set_pow(void * hdev, num* k, fe* p, fe* q);
+	int sm2_gen_key(void * hdev, uint8_t * keypair);
+	int sm2_set_pow(void * hdev, cap_ecc_keypair_t * k, cap_ecc_pubkey_t * p, cap_ecc_pubkey_t * q);
+	int sm2_get_z(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t * pkey, uint8_t* inbuf, uint32_t ninbytes, uint8_t* tmpbuf);
+	int hash_with_salt_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t * salt, uint32_t saltlen, uint8_t* inbuf, uint32_t ninbytes, uint8_t* tmpbuf);
+
 
 };
 

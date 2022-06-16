@@ -52,6 +52,8 @@ struct task_ctx {
 	};
 
 	uint32_t hblkid;
+	uint8_t * entropy;
+	uint32_t entropylen;
 };
 
 struct snd_ctx {
@@ -139,7 +141,6 @@ static void *asym_encrypt(void* context) {
 			tmpfe->import_from_bytes(inptr);
 		}
 
-#define DEBUG
 #ifdef DEBUG		
 		e->print();		
 		tmpfe->print();
@@ -158,7 +159,6 @@ static void *asym_encrypt(void* context) {
 #ifdef DEBUG
 		tmpfe->print();
 #endif
-#undef DEBUG
 
 		tmpfe->export_to_bytes(outptr);
 	}
@@ -253,6 +253,47 @@ static void *psi_hashing_function(void* context) {
 	}
 
 
+	free(tmphashbuf);
+	return 0;
+}
+
+static void *psi_hashing_use_tee_function(void* context) {
+#ifdef DEBUG
+	cout << "Hashing thread started" << endl;
+#endif
+	sym_ctx hdata = ((task_ctx*) context)->sctx;
+	element_ctx electx = ((task_ctx*) context)->eles;
+
+	crypto* crypt_env = hdata.symcrypt;
+	uint8_t * salt = ((task_ctx*) context)->entropy;
+	uint32_t saltlen = ((task_ctx*) context)->entropylen;
+
+	if (1 != crypt_env->hw_on)
+	{
+		return NULL;
+	}
+
+	uint32_t* perm = electx.perm;
+	uint32_t i;
+	uint8_t* tmphashbuf = (uint8_t*) malloc(crypt_env->get_hash_bytes());
+
+	{
+		if(electx.hasvarbytelen) {
+			uint8_t **inptr = electx.input2d;
+			for(i = electx.startelement; i < electx.endelement; i++) {
+				crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
+					salt, saltlen, inptr[i], electx.varbytelens[i], tmphashbuf);
+			}
+		} else {
+			uint8_t *inptr = electx.input1d;
+			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
+				crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
+					salt, saltlen, inptr, electx.fixedbytelen, tmphashbuf);
+			}
+		}
+	}
+
+	//
 	free(tmphashbuf);
 	return 0;
 }

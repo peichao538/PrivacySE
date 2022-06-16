@@ -1,7 +1,7 @@
-#include "naive-psi.h"
+#include "tee-psi.h"
 
 //routine for 2dimensional array with variable bit-length elements
-uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* elebytelens, uint8_t** elements,
+uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* elebytelens, uint8_t** elements,
 		uint8_t*** result, uint32_t** resbytelens, crypto* crypt_env, CSocket* sock, uint32_t ntasks) {
 	task_ctx ectx;
 	ectx.eles.input2d = elements;
@@ -9,7 +9,7 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* ele
 	ectx.eles.hasvarbytelen = true;
 	uint32_t* matches = (uint32_t*) malloc(sizeof(uint32_t) * min(neles, pneles));
 
-	uint32_t intersect_size = naivepsi(role, neles, pneles, ectx, crypt_env, sock, ntasks, matches);
+	uint32_t intersect_size = teepsi(role, neles, pneles, ectx, crypt_env, sock, ntasks, matches);
 
 	if(role == CLIENT) 
 	{
@@ -22,7 +22,7 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* ele
 }
 
 //routine for 1dimensional array with fixed bit-length elements
-uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t elebytelen, uint8_t* elements,
+uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t elebytelen, uint8_t* elements,
 		uint8_t** result, crypto* crypt_env, CSocket* sock, uint32_t ntasks) {
 	task_ctx ectx;
 	ectx.eles.input1d = elements;
@@ -31,7 +31,7 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t eleb
 
 	uint32_t* matches = (uint32_t*) malloc(sizeof(uint32_t) * min(neles, pneles));
 
-	uint32_t intersect_size = naivepsi(role, neles, pneles, ectx, crypt_env, sock, ntasks, matches);
+	uint32_t intersect_size = teepsi(role, neles, pneles, ectx, crypt_env, sock, ntasks, matches);
 
 	create_result_from_matches_fixed_bitlen(result, elebytelen, elements, matches, intersect_size);
 
@@ -40,7 +40,7 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t eleb
 	return intersect_size;
 }
 
-uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
+uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
 		crypto* crypt_env, CSocket* sock, uint32_t ntasks, uint32_t* matches) {
 
 	uint32_t i, intersect_size, maskbytelen;
@@ -52,12 +52,44 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx
 
 	maskbytelen = ceil_divide(crypt_env->get_seclvl().statbits + ceil_log2(neles) + ceil_log2(pneles), 8);
 
+	// check hw is enabled
+	if (1 != crypt_env->hw_on)
+	{
+		return 0;
+	}
+	
+	//
 	hashes = (uint8_t*) malloc(sizeof(uint8_t) * neles * maskbytelen);
 	perm  = (uint32_t*) malloc(sizeof(uint32_t) * neles);
 
-
 	/* Generate the random permutation the elements */
 	crypt_env->gen_rnd_perm(perm, neles);
+
+    /* negotiate */
+	cap_ecc_keypair_t * spkey = (cap_ecc_keypair_t *) malloc(sizeof(cap_ecc_keypair_t));
+	cap_ecc_pubkey_t * rpubkey = (cap_ecc_pubkey_t *) malloc(sizeof(cap_ecc_pubkey_t));
+
+	crypt_env->sm2_gen_key(crypt_env->dev_mngt[0], (uint8_t *)spkey);
+
+	snd_and_rcv((uint8_t *)(spkey->pubkey), sizeof(cap_ecc_pubkey_t), rpubkey, sizeof(cap_ecc_pubkey_t), tmpsock);
+
+	crypt_env->sm2_set_pow(crypt_env->dev_mngt[0], spkey->prikey, rpubkey, rpubkey);
+
+	memset(spkey, 0, sizeof(cap_ecc_keypair_t));
+	free(spkey);
+
+	uint8_t * psalt = (uint8_t *) malloc(sizeof(uint8_t) * 32 * 2);
+	memcpy(psalt, rpubkey->x, 64);
+	//memcpy(psalt + 32, rpubkey->y, 32);
+	free(rpubkey);
+
+#ifdef DEBUG
+	cout << "negotiate key" << endl;
+	for(uint8_t * tptr = (uint8_t *)rpubkey, i = 0; i < sizeof(cap_ecc_pubkey_t); i++) {
+		cout << (hex) << (uint32_t)tptr[i] << (dec);
+	}
+	cout << endl;
+#endif
 
 	/* Hash and permute elements */
 #ifdef DEBUG
@@ -71,8 +103,10 @@ uint32_t naivepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx
 	ectx.eles.output = hashes;
 	ectx.eles.perm = perm;
 	ectx.sctx.symcrypt = crypt_env;
+	ectx.entropy = psalt;
+	ectx.entropylen = 64;
 
-	run_task(ntasks, ectx, psi_hashing_function);
+	run_task(ntasks, ectx, psi_hashing_use_tee_function);
 
 	phashes = (uint8_t*) malloc(sizeof(uint8_t) * pneles * maskbytelen);
 
