@@ -12,6 +12,7 @@
 #include "../ot-based/ot-psi.h"
 #include "../server-aided/sapsi.h"
 #include "../naive-hashing/naive-psi.h"
+#include "../tee-based/tee-psi.h"
 #include <fstream>
 #include <iostream>
 #include <string>

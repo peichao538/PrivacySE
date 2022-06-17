@@ -116,7 +116,7 @@ static const seclvl LT = {40, 128, 3072, 256, 283};
 static const seclvl XLT = {40, 192, 7680, 384, 409};
 static const seclvl XXLT = {40, 256, 15360, 512, 571};
 
-enum psi_prot {NAIVE=0, TTP=1, DH_ECC=2, OT_PSI=3, TEE=4, PROT_LAST=5};
+enum psi_prot {NAIVE=0, TTP=1, DH_ECC=2, OT_PSI=3, TEE_PSI=4, PROT_LAST=5};
 
 
 static int ceil_log2(int bits) {

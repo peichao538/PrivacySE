@@ -372,7 +372,8 @@ int crypto::sm2_get_z(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t 
         return SDR_INARGERR;
     }
 
-	const uint8_t * id = "1234567812345678";
+	//"1234567812345678";
+	const uint8_t id[] = {0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38};
 	uint32_t idlen = 16;
 
 	//
@@ -531,10 +532,10 @@ void crypto::gen_rnd_perm(uint32_t* perm, uint32_t neles) {
 	for(i = 0; i < neles; i++) {
 		perm[i] = i;
 	}
-	for(i = 0; i < neles; i++) {
-		j = rndbuf[i] % neles; //NOT UNIFORM
-		swap(perm[i], perm[j]);
-	}
+	// for(i = 0; i < neles; i++) {
+	// 	j = rndbuf[i] % neles; //NOT UNIFORM
+	// 	swap(perm[i], perm[j]);
+	// }
 	free(rndbuf);
 }
 

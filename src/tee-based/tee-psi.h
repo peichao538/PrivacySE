@@ -8,6 +8,7 @@
 #include "../util/crypto/pk-crypto.h"
 #include <glib.h>
 #include "../util/helpers.h"
+#include <iomanip>
 
 
 uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, uint32_t* elebytelens, uint8_t** elements,

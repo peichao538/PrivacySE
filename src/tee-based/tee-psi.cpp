@@ -66,14 +66,15 @@ uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
 	crypt_env->gen_rnd_perm(perm, neles);
 
     /* negotiate */
+	/* Todo: use tee to protect */
 	cap_ecc_keypair_t * spkey = (cap_ecc_keypair_t *) malloc(sizeof(cap_ecc_keypair_t));
 	cap_ecc_pubkey_t * rpubkey = (cap_ecc_pubkey_t *) malloc(sizeof(cap_ecc_pubkey_t));
 
-	crypt_env->sm2_gen_key(crypt_env->dev_mngt[0], (uint8_t *)spkey);
+	crypt_env->sm2_gen_key(crypt_env->dev_mngt.hdev[0], (uint8_t *)spkey);
 
-	snd_and_rcv((uint8_t *)(spkey->pubkey), sizeof(cap_ecc_pubkey_t), rpubkey, sizeof(cap_ecc_pubkey_t), tmpsock);
+	snd_and_rcv((uint8_t *)(&(spkey->pubkey)), sizeof(cap_ecc_pubkey_t), (uint8_t *)rpubkey, sizeof(cap_ecc_pubkey_t), tmpsock);
 
-	crypt_env->sm2_set_pow(crypt_env->dev_mngt[0], spkey->prikey, rpubkey, rpubkey);
+	crypt_env->sm2_set_pow(crypt_env->dev_mngt.hdev[0], &(spkey->prikey), rpubkey, rpubkey);
 
 	memset(spkey, 0, sizeof(cap_ecc_keypair_t));
 	free(spkey);
@@ -81,15 +82,17 @@ uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
 	uint8_t * psalt = (uint8_t *) malloc(sizeof(uint8_t) * 32 * 2);
 	memcpy(psalt, rpubkey->x, 64);
 	//memcpy(psalt + 32, rpubkey->y, 32);
-	free(rpubkey);
 
+//#define DEBUG
 #ifdef DEBUG
 	cout << "negotiate key" << endl;
 	for(uint8_t * tptr = (uint8_t *)rpubkey, i = 0; i < sizeof(cap_ecc_pubkey_t); i++) {
-		cout << (hex) << (uint32_t)tptr[i] << (dec);
+		cout << std::setw(2) << setfill('0') << (hex) << (uint32_t)tptr[i];// << (dec);
 	}
 	cout << endl;
 #endif
+
+	free(rpubkey);
 
 	/* Hash and permute elements */
 #ifdef DEBUG
@@ -116,21 +119,22 @@ uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
 #endif
 	snd_and_rcv(hashes, neles * maskbytelen, phashes, pneles * maskbytelen, tmpsock);
 
-	/*cout << "Hashes of my elements: " << endl;
-	for(i = 0; i < neles; i++) {
-		for(uint32_t j = 0; j < maskbytelen; j++) {
-			cout << (hex) << (uint32_t) hashes[i * maskbytelen + j] << (dec);
-		}
-		cout << endl;
-	}
+	// cout << "Hashes of my elements: " << endl;
+	// for(i = 0; i < neles; i++) {
+	// 	for(uint32_t j = 0; j < maskbytelen; j++) {
+	// 		cout << std::setw(2) << setfill('0') << (hex) << (uint32_t) hashes[i * maskbytelen + j] << (dec);
+	// 	}
+	// 	cout << endl;
+	// }
 
-	cout << "Hashes of partner elements: " << endl;
-	for(i = 0; i < pneles; i++) {
-		for(uint32_t j = 0; j < maskbytelen; j++) {
-			cout << (hex) << (uint32_t) phashes[i * maskbytelen + j] << (dec);
-		}
-		cout << endl;
-	}*/
+	// cout << "Hashes of partner elements: " << endl;
+	// for(i = 0; i < pneles; i++) {
+	// 	for(uint32_t j = 0; j < maskbytelen; j++) {
+	// 		cout << std::setw(2) << setfill('0') << (hex) << (uint32_t) phashes[i * maskbytelen + j] << (dec);
+	// 	}
+	// 	cout << endl;
+	// }
+
 #ifdef DEBUG
 	cout << "Finding intersection" << endl;
 #endif
@@ -141,10 +145,14 @@ uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
 #ifdef DEBUG
 	cout << "Free-ing allocated memory" << endl;
 #endif
+#undef DEBUG
+
 	free(perm);
 	free(hashes);
 	//free(permeles);
 	free(phashes);
+
+	free(psalt);
 
 	return intersect_size;
 }
