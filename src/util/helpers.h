@@ -430,6 +430,7 @@ static uint32_t find_intersection(uint8_t* hashes, uint32_t neles, uint8_t* phas
 		invperm[perm[i]] = i;
 	}
 
+	// g_direct_hash 
 	GHashTable *map= g_hash_table_new_full(g_int64_hash, g_int64_equal, NULL, NULL);
 	for(i = 0; i < neles; i++) {
 		memcpy(&tmpkey, hashes + i*hashbytelen, mapbytelen);
