@@ -298,12 +298,12 @@ void crypto::hash_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t* 
 
 	// ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0);
 	// ret = cap_hash_onetime(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0, inbuf, ninbytes, sha_hash_buf, &hash_len);
-	ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0);
-	ret = cap_hash_onetime(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0, inbuf, ninbytes, tmpbuf, &hash_len);
+	
+	//ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0);
+	//ret = cap_hash_onetime(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0, inbuf, ninbytes, tmpbuf, &hash_len);
 
-	// SDF_HashInit(hdev, SGD_SM3, NULL, NULL, 0);
-	// SDF_HashUpdate(hdev, inbuf, ninbytes);
-	// SDF_HashFinal(hdev, sha_hash_buf, &hash_len);
+	while ((ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0)) == CAP_RET_BUSY) usleep(10);
+	while ((ret = cap_hash_onetime(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0, inbuf, ninbytes, tmpbuf, &hash_len)) == CAP_RET_BUSY) usleep(10);
 
     memcpy(resbuf, tmpbuf, noutbytes);
 	
@@ -390,9 +390,13 @@ int crypto::sm2_get_z(void * hdev, uint8_t* resbuf, uint32_t noutbytes, uint8_t 
 
 	cap_ecc_pubkey_t * ptr_pubkey = (cap_ecc_pubkey_t*)pkey;
 
-	ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, ptr_pubkey, (uint8_t *)id, idlen);
-	ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes);
-	ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len);
+	//ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, ptr_pubkey, (uint8_t *)id, idlen);
+	//ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes);
+	//ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len);
+
+	while ((ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, ptr_pubkey, (uint8_t *)id, idlen)) == CAP_RET_BUSY) usleep(10);
+	while ((ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes)) == CAP_RET_BUSY) usleep(10);
+	while ((ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len)) == CAP_RET_BUSY) usleep(10);
 
     memcpy(resbuf, tmpbuf, noutbytes);
 	
@@ -421,11 +425,13 @@ int crypto::hash_with_salt_hw(void * hdev, uint8_t* resbuf, uint32_t noutbytes, 
 	cap_hash_ctx.hdev = hdev;
 	cap_hash_ctx.sess.mode = CAP_SYNC_MODE;
 
-	ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0);
-	//ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0);
-	ret = cap_hash_update(&cap_hash_ctx, salt, saltlen);
-	ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes);
-	ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len);
+	// Note: must add condition judgment to be sure the completion of execution, otherwise there will be an error
+	while ((ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SM3, NULL, NULL, 0)) == CAP_RET_BUSY) usleep(10);
+	//while ((ret = cap_hash_init(&cap_hash_ctx, CAP_MD_SHA256, NULL, NULL, 0)) == CAP_RET_BUSY) usleep(10);
+
+	while ((ret = cap_hash_update(&cap_hash_ctx, salt, saltlen)) == CAP_RET_BUSY) usleep(10);
+	while ((ret = cap_hash_update(&cap_hash_ctx, inbuf, ninbytes)) == CAP_RET_BUSY)  usleep(10);
+	while ((ret = cap_hash_final(&cap_hash_ctx, tmpbuf, &hash_len)) == CAP_RET_BUSY) usleep(10);
 
     memcpy(resbuf, tmpbuf, noutbytes);
 	

@@ -58,11 +58,11 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 
 	if (enable_dev)
 	{
-		crypto.open_device(1, 1);
+		crypto.open_device(1, 2);
 	}
 
 	switch(protocol) {
-	case NAIVE:
+	case NAIVE: 
 		intersect_size = naivepsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens,
 				&crypto, sockfd.data(), ntasks);
 		break;

@@ -417,12 +417,18 @@ static void run_task_asym(uint32_t nthreads, task_ctx context, void* (*func)(voi
 }
 
 
+static void iterator_map(gpointer key, gpointer value, gpointer user_data)
+{
+	printf((const char *)user_data,  (uint64_t)key,  *(uint64_t *)value);
+	//printf((const char *)user_data, *(uint64_t *)key,  *(uint64_t *)value);
+}
 
 static uint32_t find_intersection(uint8_t* hashes, uint32_t neles, uint8_t* phashes, uint32_t pneles,
 		uint32_t hashbytelen, uint32_t* perm, uint32_t* matches) {
 
 	uint32_t* invperm = (uint32_t*) malloc(sizeof(uint32_t) * neles);
 	uint64_t *tmpval, tmpkey = 0;
+	//uint64_t *tmpval, *tmpkey;
 	uint32_t mapbytelen = min((uint32_t) hashbytelen, (uint32_t) sizeof(uint64_t));
 	uint32_t size_intersect, i, intersect_ctr;
 
@@ -431,16 +437,25 @@ static uint32_t find_intersection(uint8_t* hashes, uint32_t neles, uint8_t* phas
 	}
 
 	// g_direct_hash 
-	GHashTable *map= g_hash_table_new_full(g_int64_hash, g_int64_equal, NULL, NULL);
+	//GHashTable *map= g_hash_table_new_full(g_int64_hash, g_int64_equal, NULL, NULL);
+	GHashTable *map= g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, NULL);
+
 	for(i = 0; i < neles; i++) {
 		memcpy(&tmpkey, hashes + i*hashbytelen, mapbytelen);
+		//tmpkey = (uint64_t *)(hashes + i*hashbytelen);
 		//g_hash_table_insert(map,(void*) &tmpkey, &(invperm[i]));
-		g_hash_table_insert(map,(void*) &tmpkey, &(invperm[i]));
+		g_hash_table_insert(map, GINT_TO_POINTER(tmpkey), &(invperm[i]));
 	}
+
+	// ==> for test
+	//g_hash_table_foreach(map, (GHFunc)iterator_map, (void *)("The map of %#llx is %d  \n"));
+	// <==
 
 	for(i = 0, intersect_ctr = 0; i < pneles; i++) {
 		memcpy(&tmpkey, phashes+ i*hashbytelen, mapbytelen);
-		if(g_hash_table_lookup_extended(map, (void*) &tmpkey, NULL, (void**) &tmpval)) {
+		//tmpkey = (uint64_t *)(phashes + i*hashbytelen);
+		//if(g_hash_table_lookup_extended(map, (void*) &tmpkey, NULL, (void**) &tmpval)) {
+		if(g_hash_table_lookup_extended(map, GINT_TO_POINTER(tmpkey), NULL, (void**) &tmpval)) {
 			matches[intersect_ctr] = tmpval[0];
 			intersect_ctr++;
 			assert(intersect_ctr <= min(neles, pneles));

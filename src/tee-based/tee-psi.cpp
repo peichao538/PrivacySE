@@ -119,13 +119,33 @@ uint32_t teepsi(role_type role, uint32_t neles, uint32_t pneles, task_ctx ectx,
 #endif
 	snd_and_rcv(hashes, neles * maskbytelen, phashes, pneles * maskbytelen, tmpsock);
 
-	// cout << "Hashes of my elements: " << endl;
-	// for(i = 0; i < neles; i++) {
-	// 	for(uint32_t j = 0; j < maskbytelen; j++) {
-	// 		cout << std::setw(2) << setfill('0') << (hex) << (uint32_t) hashes[i * maskbytelen + j] << (dec);
-	// 	}
-	// 	cout << endl;
-	// }
+#ifdef DEBUG
+	//
+	std::ofstream ofs;
+
+	if (SERVER == role)
+	{
+		/* code */
+		ofs.open ("server.txt", std::ofstream::out | std::ofstream::trunc);
+	}
+	else
+	{
+		//
+		ofs.open ("client.txt", std::ofstream::out | std::ofstream::trunc);
+	}
+
+
+	cout << "Hashes of my elements: " << endl;
+	for(i = 0; i < neles; i++) {
+		for(uint32_t j = 0; j < maskbytelen; j++) {
+			//cout << std::setw(2) << setfill('0') << (hex) << (uint32_t) hashes[i * maskbytelen + j] << (dec);
+			ofs << std::setw(2) << setfill('0') << (hex) << (uint32_t) hashes[i * maskbytelen + j] << (dec);
+		}
+		//cout << endl;
+		ofs << endl;
+	}
+	ofs.close();
+#endif
 
 	// cout << "Hashes of partner elements: " << endl;
 	// for(i = 0; i < pneles; i++) {
