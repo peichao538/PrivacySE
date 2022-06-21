@@ -230,7 +230,7 @@ static void *psi_hashing_function(void* context) {
 				inptr[i], electx.varbytelens[i], tmphashbuf);
 			}
 		} else {
-			uint8_t *inptr = electx.input1d;
+			uint8_t *inptr = electx.input1d + electx.startelement*electx.fixedbytelen;
 			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
 				crypt_env->hash_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
 				inptr, electx.fixedbytelen, tmphashbuf);
@@ -245,7 +245,7 @@ static void *psi_hashing_function(void* context) {
 				crypt_env->hash(electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr[i], electx.varbytelens[i], tmphashbuf);
 			}
 		} else {
-			uint8_t *inptr = electx.input1d;
+			uint8_t *inptr = electx.input1d + electx.startelement*electx.fixedbytelen;
 			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
 				crypt_env->hash(electx.output+perm[i]*electx.outbytelen, electx.outbytelen, inptr, electx.fixedbytelen, tmphashbuf);
 			}
