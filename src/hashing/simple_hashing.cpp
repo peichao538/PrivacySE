@@ -103,7 +103,8 @@ void *gen_entries(void *ctx_tmp) {
 	uint32_t i, inbytelen, *address;
 
 	address = (uint32_t*) malloc(NUM_HASH_FUNCTIONS * sizeof(uint32_t));
-	tmpbuf = (uint8_t*) calloc(ceil_divide(ctx->hs->outbitlen, 8), sizeof(uint8_t));	//for(i = 0; i < NUM_HASH_FUNCTIONS; i++) {
+	tmpbuf = (uint8_t*) calloc(ceil_divide(ctx->hs->outbitlen, 8), sizeof(uint8_t));
+	//for(i = 0; i < NUM_HASH_FUNCTIONS; i++) {
 	//	tmpbuf[i] = (uint8_t*) malloc(ceil_divide(ctx->hs->outbitlen, 8));
 	//}
 
