@@ -674,6 +674,11 @@ int crypto::close_device()
 	{
 		ret = cap_close_device(dev_mngt.hdev[i]);
 
+		if (ret != CAP_RET_SUCCESS)
+		{
+			printf("Device Close Filed.\n");
+		 	exit(0);
+		}
 	}
 
 	// for (int i = 0; i < dev_mngt.handle_cnt; ++i)

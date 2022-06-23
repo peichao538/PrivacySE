@@ -1,9 +1,5 @@
 # Private Set Intersection (PSI)
 
-### Faster Private Set Intersection Based on OT Extension
-
-By *Benny Pinkas, Thomas Schneider and Michael Zohner* in USENIX Security Symposium 2014 [1], *Benny Pinkas, Thomas Schneider, Gil Segev and Michael Zohner* in USENIX Security Symposium 2015 [2], and *Benny Pinkas, Thomas Schneider and Michael Zohner* in ePrint [3]. Please note that the code is currently being restructured and not all routines might work correctly. The PSI code is licensed under AGPLv3, see the LICENSE file for a copy of the license. The implementations for performing PSI on a sets of a billion elements can be found [here](https://github.com/Oleksandr-Tkachenko/PSI_Intersection).
-
 ### Features
 ---
 
@@ -12,6 +8,7 @@ By *Benny Pinkas, Thomas Schneider and Michael Zohner* in USENIX Security Sympos
   * the server-aided protocol of [4]
   * the Diffie-Hellman-based PSI protocol of [5]
   * the OT-based PSI protocol of [3]
+  * the TEE-based PSI using hash with salt in SGX
 
 This code is provided as a experimental implementation for testing purposes and should not be used in a productive environment. We cannot guarantee security and correctness.
 
@@ -38,7 +35,7 @@ This code is provided as a experimental implementation for testing purposes and 
 
 2. Enter the Framework directory: `cd PrivacySE/`
 
-3. Call `make` in the root directory to compile all dependencies, tests, and examples and create the executables: **psi.exe** (used for benchmarking) and **demo.exe** (a small demonstrator for intersecting email addresses).
+3. Call `make` in the root directory to compile all dependencies, tests, and examples and create the executables: **bench.exe** (used for benchmarking) and **psi.exe** (a small demonstrator for intersecting email addresses).
 
 Please note that downloading this project as ZIP file will yield compilation errors, since the Miracl library is included as external project. To solve this, download the Miracl sources in commit version `cff161b` (found [here](https://github.com/CertiVox/Miracl/tree/cff161bad6364548b361b63938a988db23f60c2a) and extract the contents of the main folder in `src/externals/Miracl`. Then, continue with steps 2 and 3.
 
@@ -46,11 +43,11 @@ Please note that downloading this project as ZIP file will yield compilation err
 
 An example demo is included and can be run by opening two terminals in the root directory. Execute in the first terminal:
 
-	./demo.exe -r 0 -p 0 -f sample_sets/emails_alice.txt
+	./psi.exe -r 0 -p 4 -b -f sample_sets/emails_alice.txt
 	
 and in the second terminal:
 	
-	./demo.exe -r 1 -p 0 -f sample_sets/emails_bob.txt
+	./psi.exe -r 1 -p 4 -b -f sample_sets/emails_bob.txt
 	
 
 This should print the following output in the second terminal: 
@@ -61,23 +58,14 @@ This should print the following output in the second terminal:
 		Ivonne.Pfisterer@mail.ru
 
 
-
 These commands will run the naive hashing protocol and compute the intersection on the 1024 randomly generated emails in sample_sets/emails_alice.txt and sample_sets/emails_bob.txt (where 3 intersecting elements were altered). To use a different protocol, the ['-p'] option can be varied as follows:
   * `-p 0`: the naive hashing protocol 
   * `-p 1`: the server-aided protocol of [4]
   * `-p 2`: the Diffie-Hellman-based PSI protocol of [5]
   * `-p 3`: the OT-based PSI protocol of [3]
+  * `-p 4`: the TEE-based PSI
 
 For further information about the program options, run ```./demo.exe -h```.
-
-### Testing the Protocols
-
-The protocols will automatically be tested on randomly generated data when invoking:
-```
-	make test
-```
-
-WARNING: Some tests can still fail since the code is currently being debugged. 
 
 ### Generating Random Email Adresses
 

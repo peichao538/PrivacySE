@@ -8,9 +8,12 @@ EXT=${SRC}/externals
 CC=g++
 #COMPILER_OPTIONS=-O2
 COMPILER_OPTIONS=-g3 -O0 #-O2 #-fPIC -mavx -maes -mpclmul -DRDTSC -DTEST=AES128
+COMPILER_OPTIONS+= -fPIC
 
 DEBUG_OPTIONS=-g3 -ggdb #-Wall -Wextra 
 
+LD=ld
+AR=ar
 BATCH=
 
 ARCHITECTURE = $(shell uname -m)
@@ -66,7 +69,7 @@ OBJECTS_MIRACL=${MIRACL_LIB_DIR}/*.o
 MIRACL_LIB=${EXT}/miracl_lib/miracl.a
 
 
-all: miracl core bench demo test_ot test_cuckoo test_hashing_util
+all: miracl core bench psi test_ot test_cuckoo test_hashing_util lib_psi
 	@echo "make all done."
 
 
@@ -76,10 +79,10 @@ core: ${OBJECTS_CORE}
 	${CC} $< ${COMPILER_OPTIONS} ${DEBUG_OPTIONS} -c ${INCLUDE} ${LIBRARIES} ${CFLAGS} ${BATCH} -o $@
 
 bench:  
-	${CC} -o psi.exe ${SRC}/mains/bench_psi.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
+	${CC} -o bench.exe ${SRC}/mains/bench_psi.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
 
-demo:  
-	${CC} -o demo.exe ${SRC}/mains/psi_demo.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
+psi:  
+	${CC} -o psi.exe ${SRC}/mains/psi_demo.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
 
 test: core
 	${CC} -o test.exe ${SRC}/mains/test_psi.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS} 
@@ -96,12 +99,18 @@ test_hashing_util: core
 	${CC} -o test-hashing_util.exe ${SRC}/mains/test_hashing_util.cpp ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
 
 
+lib_psi: core
+#	${LD} -shared -o libcap.so $(SDK_OBJ)
+#	${AR} -crsT libcap.a $(SDK_OBJ) $(RSP_LIB)
+#	${LD} -shared -o libhwpsi.so ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${INCLUDE} ${OBJECTS_MIRACL} ${MIRACL_LIB_DIR}/*.a
+	${AR} -crsT libwhpsi.a ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT}
+
 cuckoo:  
 	${CC} -o cuckoo.exe ${SRC}/mains/cuckoo_analysis.cpp ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
 
 
 # this will create a copy of the files in ${SOURCES_MIRACL} and its sub-directories and put them into ${MIRACL_LIB_DIR} without sub-directories, then compile it
-miracl:	${MIRACL_LIB_DIR}/miracl.a
+miracl:	${MIRACL_LIB_DIR}/miracl.a ${OBJECTS_MIRACL}
 
 # copy Miracl files to a new directory (${CORE}/util/miracl_lib/), call the build script and delete everything except the archive, header and object files.
 ${MIRACL_LIB_DIR}/miracl.a: ${SOURCES_MIRACL}
