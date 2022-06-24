@@ -58,7 +58,7 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 
 	if (enable_dev)
 	{
-		crypto.open_device(1, 128);
+		crypto.open_device(1);
 	}
 
 	switch(protocol) {
@@ -71,8 +71,8 @@ int32_t psi_demonstrator(int32_t argc, char** argv) {
 				&crypto, sockfd.data(), ntasks);
 		break;
 	case DH_ECC:
-		intersect_size = dhpsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens, &crypto,
-				sockfd.data(), ntasks);
+		intersect_size = dhpsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens,
+				&crypto, sockfd.data(), ntasks);
 		break;
 	case OT_PSI:
 		intersect_size = otpsi(role, nelements, pnelements, elebytelens, elements, &intersection, &res_bytelens,
