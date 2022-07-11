@@ -100,10 +100,9 @@ test_hashing_util: core
 
 
 lib_psi: core
-#	${LD} -shared -o libcap.so $(SDK_OBJ)
-#	${AR} -crsT libcap.a $(SDK_OBJ) $(RSP_LIB)
 #	${LD} -shared -o libhwpsi.so ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${INCLUDE} ${OBJECTS_MIRACL} ${MIRACL_LIB_DIR}/*.a
-	${AR} -crsT libwhpsi.a ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT}
+	${AR} -crs libwhpsi.a ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL}
+	cp libwhpsi.a ./lib
 
 cuckoo:  
 	${CC} -o cuckoo.exe ${SRC}/mains/cuckoo_analysis.cpp ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
@@ -121,6 +120,9 @@ ${MIRACL_LIB_DIR}/miracl.a: ${SOURCES_MIRACL}
 # only clean example objects, test object and binaries
 clean:
 	rm -f ${OBJECTS_EXAMPLE} ${OBJECTS_TEST} *.exe ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_CRYPTO} ${OBJECTS_OT}
+
+clean-psi-lib:
+	rm -f libwhpsi.a; rm -f ./lib/libwhpsi.a
 
 # this will clean everything: example objects, test object and binaries and the Miracl library
 cleanall: clean
