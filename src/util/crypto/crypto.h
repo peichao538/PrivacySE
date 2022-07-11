@@ -149,7 +149,7 @@ public:
 
 	devmngt_t dev_mngt;
 
-	int open_device(int devno, int ndevtd);
+	int open_device(int devno, int ndevtd = 128);
 	int close_device();
 
 	int sm2_set_pow(void * hdev, num* k, fe* p, fe* q);
