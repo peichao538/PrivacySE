@@ -5,12 +5,41 @@
 #include "../src/util/helpers.h"
 
 
-int32_t main(int32_t argc, char** argv) {
-	psi_test(argc, argv);
+void read_elements(uint8_t*** elements, uint32_t** elebytelens, uint32_t* nelements, string filename) {
+	uint32_t i, j;
+	ifstream infile(filename.c_str());
+	if(!infile.good()) {
+		cerr << "Input file " << filename << " does not exist, program exiting!" << endl;
+		exit(0);
+	}
+	string line;
+	if(*nelements == 0) {
+		while (std::getline(infile, line)) {
+			++*nelements;
+		}
+	}
+	*elements=(uint8_t**) malloc(sizeof(uint8_t*)*(*nelements));
+	*elebytelens = (uint32_t*) malloc(sizeof(uint32_t) * (*nelements));
+
+	infile.clear();
+	infile.seekg(ios::beg);
+	for(i = 0; i < *nelements; i++) {
+		assert(std::getline(infile, line));
+		(*elebytelens)[i] = line.length();
+		(*elements)[i] = (uint8_t*) malloc((*elebytelens)[i]);
+		memcpy((*elements)[i], (uint8_t*) line.c_str(), (*elebytelens)[i]);
+
+#ifdef PRINT_INPUT_ELEMENTS
+		cout << "Element " << i << ": ";
+		for(j = 0; j < (*elebytelens)[i]; j++)
+			cout << (*elements)[i][j];
+		cout << endl;
+#endif
+	}
 }
 
 
-int psi_test()
+int psi_test(int32_t argc, char** argv)
 {
     int ret = 0;
 
@@ -25,12 +54,12 @@ int psi_test()
     uint8_t nego_data_client[128];
     uint32_t nego_data_len_client = 128;
 
-    uint32_t server_nelements, client_nelements;
-    uint8_t ** server_elements, ** client_elements;
-    uint32_t * server_elebytelens, * client_elebytelens;
+    uint32_t server_nelements = 0, client_nelements = 0;
+    uint8_t ** server_elements = NULL, ** client_elements = NULL;
+    uint32_t * server_elebytelens = NULL, * client_elebytelens = NULL;
 
-    uint32_t ** server_intersection, ** client_intersection;
-    uint32_t * server_res_bytelens, * client_res_bytelens;
+    uint8_t ** server_intersection = NULL, ** client_intersection = NULL;
+    uint32_t * server_res_bytelens = NULL, * client_res_bytelens = NULL;
 
     //
     string sever_filename = "../sample_sets/emails_alice.txt";
@@ -38,7 +67,7 @@ int psi_test()
 
     //
     read_elements(&server_elements, &server_elebytelens, &server_nelements, sever_filename);
-    read_elements(&client_elements, &client_elebytelens, &client_nelements, sever_filename);
+    read_elements(&client_elements, &client_elebytelens, &client_nelements, client_filename);
 
     // Init
     psi_server = teepsi_init(SERVER, 1, nego_data_server, &nego_data_len_server);
@@ -47,62 +76,77 @@ int psi_test()
         printf("Server init fail!\n");
     }
 
-    psi_client = teepsi_init(SERVER, 1, nego_data_client, &nego_data_len_client);
+    psi_client = teepsi_init(CLIENT, 1, nego_data_client, &nego_data_len_client);
     if (!psi_client)
     {
         printf("Client init fail!\n");
     }
 
+    // 1st time
+    // Server <--> Client
+
+
     // negotiate
     ret = teepsi_negotiate(psi_server, nego_data_client, nego_data_len_client);
-    if (ret != !)
+    if (ret != 1)
     {
         printf("Server negotiate fail!\n");
     }
 
     ret = teepsi_negotiate(psi_client, nego_data_server, nego_data_len_server);
-    if (ret != !)
+    if (ret != 1)
     {
         printf("Client negotiate fail!\n");
     }
 
     // calculate
     int server_len = teepsi_calc(psi_server, server_nelements, client_nelements, server_elebytelens, server_elements, NULL, 0);
-    uint8_t * server_result = (uint8_t *)malloc(len);    
+    uint8_t * server_result = (uint8_t *)malloc(server_len);    
     teepsi_calc(psi_server, server_nelements, client_nelements, server_elebytelens, server_elements, server_result, server_len);
 
     int client_len = teepsi_calc(psi_client, client_nelements, server_nelements, client_elebytelens, client_elements, NULL, 0);
-    uint8_t * client_result = (uint8_t *)malloc(len);    
+    uint8_t * client_result = (uint8_t *)malloc(client_len);    
     teepsi_calc(psi_client, client_nelements, server_nelements, client_elebytelens, client_elements, client_result, client_len);
 
-    //
-    int intsect_size_server = teepsi_find_intersection(psi_server, server_result, server_nelements, client_result, client_nelements, &server_result, &server_res_bytelens);
+    // 2nd time
+    // Server --> Client
 
-    int intsect_size_client = teepsi_find_intersection(psi_client, client_result, client_nelements, server_result, server_nelements, &client_result, &client_res_bytelens);
+    //
+    // int intsect_size_server = teepsi_find_intersection(psi_server, server_result, server_nelements, client_result, client_nelements, 
+    //             server_elebytelens, server_elements, &server_intersection, &server_res_bytelens);
+
+    int intsect_size_client = teepsi_find_intersection(psi_client, client_result, client_nelements, server_result, server_nelements, 
+                client_elebytelens, client_elements, &client_intersection, &client_res_bytelens);
 
     //
     teepsi_done(psi_server);
     teepsi_done(psi_client);
 
     //
-	if(role == CLIENT) {
-		cout << "Computation finished. Found " << intersect_size << " intersecting elements:" << endl;
+    free(server_result);
+    free(client_result);
+
+    //
+    int i = 0, j = 0;
+
+	{
+		cout << "Computation finished. Found " << intsect_size_client << " intersecting elements:" << endl;
 		if(1) {
 			for(i = 0; i < intsect_size_client; i++) {
 				//cout << i << ": \t";
 				for(j = 0; j < client_res_bytelens[i]; j++) {
-					cout << client_result[i][j];
+					cout << client_intersection[i][j];
 				}
 				cout << endl;
 			}
 		}
 
 		for(i = 0; i < intsect_size_client; i++) {
-			free(client_result[i]);
+			free(client_intersection[i]);
 		}
 		
-		if(intersect_size > 0)
-			free(client_result);
+		if(intsect_size_client > 0)
+			free(client_intersection);
 			free(client_res_bytelens);
 	}
 
@@ -119,3 +163,8 @@ int psi_test()
 
     return 1;
 }
+
+int32_t main(int32_t argc, char** argv) {
+	psi_test(argc, argv);
+}
+

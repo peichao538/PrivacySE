@@ -35,7 +35,7 @@ LIBRARIES+= $(LIB_SDF) -I$(SDF_DIR)
 CFLAGS=
 
 # all source files and corresponding object files 
-SOURCES_CORE := $(shell find ${CORE} -type f -name '*.cpp' -not -path '*/Miracl/*' -a -not -path '*/mains/*')
+SOURCES_CORE := $(shell find ${CORE} -type f -name '*.cpp' -not -path '*/Miracl/*' -a -not -path '*/mains/*' -not -path '*/test/*')
 OBJECTS_CORE := $(SOURCES_CORE:.cpp=.o)
 # directory for PSI related sources
 SOURCES_UTIL=${SRC}/util/*.cpp

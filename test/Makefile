@@ -52,12 +52,19 @@ LIB += -ldl -lpthread
 OBJ = $(patsubst %cpp, %o, $(SRC))
 
 
-target = test-psi.exe
+OBJECTS_PSI = psi_test.o
+OBJECTS_PSI_STEP = psi_ax_test.o
 
-all : $(target)
+target = test-psi.exe
+target-step = test-psi-step.exe
+
+all : $(target) $(target-step)
 
 $(target) : $(OBJ)
-	$(CC) $(CC_FLAG) -o $@ $(OBJ) $(LIB)
+	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PSI) $(LIB)
+
+$(target-step) : $(OBJ)
+	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PSI_STEP) $(LIB)
 
 
 # .SUFFIXES: .c.o
@@ -70,5 +77,5 @@ $(target) : $(OBJ)
 .PHONY : clean
 clean :
 	@echo "Remove compile out..."
-	rm -f $(target);
+	rm -f *.o $(target) $(target-step);
 

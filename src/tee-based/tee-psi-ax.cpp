@@ -30,15 +30,14 @@ SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint32_t ntasks, uint8_t * nego_da
 {
     int ret = 0;
 
-    if ( !elebytelens || !elements || !nego_data || !nego_data_len ||
-         (*nego_data_len < sizeof(cap_ecc_pubkey_t)) )
+    if ( !nego_data || !nego_data_len || (*nego_data_len < sizeof(cap_ecc_pubkey_t)) )
     {
         return NULL;
     }
 
     //
     SUDO_PSI_HW_CTX * psi_ctx = (SUDO_PSI_HW_CTX *)malloc(sizeof(SUDO_PSI_HW_CTX));
-    if (ctx == NULL)
+    if (psi_ctx == NULL)
     {
         return NULL;
     }
@@ -64,8 +63,10 @@ SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint32_t ntasks, uint8_t * nego_da
     if (enable_dev)
     {
         ret = psi_ctx->crypt_env->open_device(1, 128);
+        //ret = psi_ctx->crypt_env->open_device(1, 1);
         if (0 == ret)
         {
+            psi_ctx->crypt_env->close_device();
             free(psi_ctx);
             return NULL;
         }
@@ -77,7 +78,7 @@ SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint32_t ntasks, uint8_t * nego_da
     //
   	cap_ecc_keypair_t * spkey = (cap_ecc_keypair_t *) psi_ctx->data;
 
-	crypt_env->sm2_gen_key(crypt_env->dev_mngt.hdev[0], (uint8_t *)spkey);
+	psi_ctx->crypt_env->sm2_gen_key(psi_ctx->crypt_env->dev_mngt.hdev[0], (uint8_t *)spkey);
     
     memcpy(nego_data, &(spkey->pubkey), sizeof(cap_ecc_pubkey_t));
     *nego_data_len = sizeof(cap_ecc_pubkey_t);
@@ -97,16 +98,16 @@ int teepsi_negotiate(SUDO_PSI_HW_CTX * ctx, uint8_t * nego_data, uint32_t nego_d
     //
     crypto * crypt_env = ctx->crypt_env;
 
-    cap_ecc_keypair_t * spkey = (cap_ecc_keypair_t *) psi_ctx->data;
+    cap_ecc_keypair_t * spkey = (cap_ecc_keypair_t *) ctx->data;
     cap_ecc_pubkey_t * rpubkey = (cap_ecc_pubkey_t *) nego_data;
     crypt_env->sm2_set_pow(crypt_env->dev_mngt.hdev[0], &(spkey->prikey), rpubkey, &(spkey->pubkey));
 
     //
-    memcpy(ctx->entr, spkey->pubkey->x, 64);
+    memcpy(ctx->entr, spkey->pubkey.x, 64);
 
     //
-	free(psi_ctx->data);
-    psi_ctx->data = NULL;
+	free(ctx->data);
+    ctx->data = NULL;
 
     return 1;
 }
@@ -140,10 +141,15 @@ int teepsi_calc(SUDO_PSI_HW_CTX * ctx, uint32_t neles, uint32_t pneles, uint32_t
     uint8_t * hashes = result;
 
 	/* Generate the random permutation the elements */
-	crypt_env->gen_rnd_perm(perm, neles);
+	crypt_env->gen_rnd_perm(ctx->perm, neles);
 
     //
     ctx->ectx = (task_ctx *)malloc(sizeof(task_ctx));
+
+    //
+	ctx->ectx->eles.input2d = elements;
+	ctx->ectx->eles.varbytelens = elebytelens;
+	ctx->ectx->eles.hasvarbytelen = true;
 
 	//ctx->ectx->eles.input = permeles;
 	//ctx->ectx->eles.inbytelen = elebytelen;
@@ -160,7 +166,8 @@ int teepsi_calc(SUDO_PSI_HW_CTX * ctx, uint32_t neles, uint32_t pneles, uint32_t
     return 1;
 }
 
-int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, uint8_t* hashes, uint32_t neles, uint8_t* phashes, uint32_t pneles, uint8_t*** result, uint32_t** resbytelens)
+int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, uint8_t* hashes, uint32_t neles, uint8_t* phashes, uint32_t pneles, 
+    uint32_t * elebytelens, uint8_t ** elements, uint8_t*** result, uint32_t** resbytelens)
 {
     uint32_t intersect_size;
     uint32_t* matches = (uint32_t*) malloc(sizeof(uint32_t) * min(neles, pneles));
@@ -200,11 +207,18 @@ int teepsi_done(SUDO_PSI_HW_CTX * ctx)
     }
 
     //
+    if (ctx->ectx != NULL)
+    {
+        free(ctx->ectx);
+    }
+
+    //
     if (ctx->crypt_env != NULL)
     {
         ctx->crypt_env->close_device();
         
         delete ctx->crypt_env;
+        ctx->crypt_env = NULL;
     }
 
     //
