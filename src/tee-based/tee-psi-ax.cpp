@@ -26,7 +26,7 @@ typedef struct sudo_psi_hw_ctx_st
 static const uint8_t const_rng_seed[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
 
-SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint32_t ntasks, uint8_t * nego_data, uint32_t * nego_data_len, bool enable_dev) 
+SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint8_t * nego_data, uint32_t * nego_data_len, uint32_t ntasks, bool enable_dev) 
 {
     int ret = 0;
 

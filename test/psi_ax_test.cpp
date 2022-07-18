@@ -70,13 +70,13 @@ int psi_test(int32_t argc, char** argv)
     read_elements(&client_elements, &client_elebytelens, &client_nelements, client_filename);
 
     // Init
-    psi_server = teepsi_init(SERVER, 1, nego_data_server, &nego_data_len_server);
+    psi_server = teepsi_init(SERVER, nego_data_server, &nego_data_len_server);
     if (!psi_server)
     {
         printf("Server init fail!\n");
     }
 
-    psi_client = teepsi_init(CLIENT, 1, nego_data_client, &nego_data_len_client);
+    psi_client = teepsi_init(CLIENT, nego_data_client, &nego_data_len_client);
     if (!psi_client)
     {
         printf("Client init fail!\n");
