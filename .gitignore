@@ -70,5 +70,5 @@ dkms.conf
 *.log
 
 #
-src/externals/miracl_lib/
+#src/externals/miracl_lib/
 sample_sets/
