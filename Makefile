@@ -1,6 +1,7 @@
 
 BIN=bin
 SRC=src
+LIB=lib
 EXT=${SRC}/externals
 
 
@@ -109,13 +110,14 @@ cuckoo:
 
 
 # this will create a copy of the files in ${SOURCES_MIRACL} and its sub-directories and put them into ${MIRACL_LIB_DIR} without sub-directories, then compile it
-miracl:	${MIRACL_LIB_DIR}/miracl.a ${OBJECTS_MIRACL}
+miracl:	${MIRACL_LIB_DIR}/miracl.a
 
 # copy Miracl files to a new directory (${CORE}/util/miracl_lib/), call the build script and delete everything except the archive, header and object files.
 ${MIRACL_LIB_DIR}/miracl.a: ${SOURCES_MIRACL}
 	@find ${EXT}/Miracl/ -type f -exec cp '{}' ${EXT}/miracl_lib \;
 #	@cd ${EXT}/miracl_lib/; bash linux64_debug;
 	@cd ${EXT}/miracl_lib/; bash ${MIRACL_MAKE}; find . -type f -not -name '*.a' -not -name '*.h' -not -name '*.o' -not -name '.git*'| xargs rm
+	cp ${EXT}/miracl_lib/miracl.a ${LIB}
 
 # only clean example objects, test object and binaries
 clean:
