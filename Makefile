@@ -70,7 +70,7 @@ OBJECTS_MIRACL=${MIRACL_LIB_DIR}/*.o
 MIRACL_LIB=${EXT}/miracl_lib/miracl.a
 
 
-all: miracl core bench psi test_ot test_cuckoo test_hashing_util lib_psi
+all: miracl core bench psi test_ot test_cuckoo test_hashing_util lib_psi test_cmp_sha
 	@echo "make all done."
 
 
@@ -98,6 +98,9 @@ test_cuckoo: core
 
 test_hashing_util: core
 	${CC} -o test-hashing_util.exe ${SRC}/mains/test_hashing_util.cpp ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
+
+test_cmp_sha: core
+	${CC} -o test-cmp-hash.exe ${SRC}/mains/bench_cmp_sha.cpp ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
 
 
 lib_psi: core
