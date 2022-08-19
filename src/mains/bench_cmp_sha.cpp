@@ -99,7 +99,8 @@ int main(int32_t argc, char** argv)
     //
     gettimeofday(&t_start, NULL);
 
-    run_task(ntasks, ectx, psi_hashing_function);
+    //run_task(ntasks, ectx, psi_hashing_function);
+	run_task(8, ectx, psi_hashing_function);
 
     gettimeofday(&t_end, NULL);
 

@@ -33,7 +33,7 @@ PSI_DIR = ../lib
 LIB_PSI = -L$(PSI_DIR) -l:libwhpsi.a
 
 MIRACL_DIR = ../lib
-MIRACL_LIB = -L$(MIRACL_DIR) -l:miracl.a
+MIRACL_LIB = -L$(MIRACL_DIR) -l:libmiracl.a
 
 INC =
 INC += $(INCLUDE)

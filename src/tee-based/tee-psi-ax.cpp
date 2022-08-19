@@ -19,6 +19,10 @@ typedef struct sudo_psi_hw_ctx_st
     uint32_t * perm;
 
     //
+    uint32_t intersect_size;
+    uint32_t * mathches;
+
+    //
     int ntasks;
 
 }SUDO_PSI_HW_CTX;
@@ -87,7 +91,7 @@ SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint8_t * nego_data, uint32_t * ne
 
 }
 
-int teepsi_negotiate(SUDO_PSI_HW_CTX * ctx, uint8_t * nego_data, uint32_t nego_data_len)
+int teepsi_negotiate(SUDO_PSI_HW_CTX * ctx, const uint8_t * nego_data, uint32_t nego_data_len)
 {
     //
     if (!ctx || !nego_data)
@@ -166,17 +170,17 @@ int teepsi_calc(SUDO_PSI_HW_CTX * ctx, uint32_t neles, uint32_t pneles, uint32_t
     return 1;
 }
 
-int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, uint8_t* hashes, uint32_t neles, uint8_t* phashes, uint32_t pneles, 
-    uint32_t * elebytelens, uint8_t ** elements, uint8_t*** result, uint32_t** resbytelens)
+int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, const uint8_t* hashes, uint32_t neles, const uint8_t* phashes, uint32_t pneles, 
+    const uint32_t * elebytelens, const uint8_t ** elements, uint8_t*** result, uint32_t** resbytelens)
 {
     uint32_t intersect_size;
     uint32_t* matches = (uint32_t*) malloc(sizeof(uint32_t) * min(neles, pneles));
 
-    intersect_size = find_intersection(hashes, neles, phashes, pneles, ctx->maskbytelen, ctx->perm, matches);
+    intersect_size = find_intersection((uint8_t *)hashes, neles, (uint8_t *)phashes, pneles, ctx->maskbytelen, ctx->perm, matches);
 
 	if(ctx->role == CLIENT) 
 	{
-		create_result_from_matches_var_bitlen(result, resbytelens, elebytelens, elements, matches, intersect_size);
+		create_result_from_matches_var_bitlen(result, resbytelens, (uint32_t *)elebytelens, (uint8_t **)elements, matches, intersect_size);
 	}
 
     //
@@ -184,12 +188,20 @@ int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, uint8_t* hashes, uint32_t ne
     matches = NULL;
     
     //
-    free(ctx->perm);
-    ctx->perm = NULL;
+    return intersect_size;
+}
+
+
+int teepsi_find_intersection_index(SUDO_PSI_HW_CTX * ctx, const uint8_t* hashes, uint32_t neles, const uint8_t* phashes, uint32_t pneles, uint32_t* matches_index)
+{
+    uint32_t intersect_size;
+
+    intersect_size = find_intersection((uint8_t *)hashes, neles, (uint8_t *)phashes, pneles, ctx->maskbytelen, ctx->perm, matches_index);
 
     //
     return intersect_size;
 }
+
 
 int teepsi_done(SUDO_PSI_HW_CTX * ctx)
 {
@@ -198,18 +210,21 @@ int teepsi_done(SUDO_PSI_HW_CTX * ctx)
     if (ctx->data != NULL)
     {
         free(ctx->data);
+        ctx->data = NULL;
     }
 
     //
     if (ctx->perm != NULL)
     {
         free(ctx->perm);
+        ctx->perm = NULL;
     }
 
     //
     if (ctx->ectx != NULL)
     {
         free(ctx->ectx);
+        ctx->ectx = NULL;
     }
 
     //
@@ -223,6 +238,7 @@ int teepsi_done(SUDO_PSI_HW_CTX * ctx)
 
     //
     free(ctx);
+    ctx = NULL;
 
     return 1;
 }

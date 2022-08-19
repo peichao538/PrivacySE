@@ -106,7 +106,7 @@ test_cmp_sha: core
 lib_psi: core
 #	${LD} -shared -o libhwpsi.so ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${INCLUDE} ${OBJECTS_MIRACL} ${MIRACL_LIB_DIR}/*.a
 	${AR} -crs libwhpsi.a ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL}
-	cp libwhpsi.a ./lib
+	cp libwhpsi.a ./lib; rm -f libwhpsi.a
 
 cuckoo:  
 	${CC} -o cuckoo.exe ${SRC}/mains/cuckoo_analysis.cpp ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
@@ -120,7 +120,7 @@ ${MIRACL_LIB_DIR}/miracl.a: ${SOURCES_MIRACL}
 	@find ${EXT}/Miracl/ -type f -exec cp '{}' ${EXT}/miracl_lib \;
 #	@cd ${EXT}/miracl_lib/; bash linux64_debug;
 	@cd ${EXT}/miracl_lib/; bash ${MIRACL_MAKE}; find . -type f -not -name '*.a' -not -name '*.h' -not -name '*.o' -not -name '.git*'| xargs rm
-	cp ${EXT}/miracl_lib/miracl.a ${LIB}
+	cp ${EXT}/miracl_lib/miracl.a ${LIB}; mv ${LIB}/miracl.a ${LIB}/libmiracl.a
 
 # only clean example objects, test object and binaries
 clean:

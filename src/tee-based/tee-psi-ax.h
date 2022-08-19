@@ -13,11 +13,13 @@
 typedef struct sudo_psi_hw_ctx_st SUDO_PSI_HW_CTX;
 
 SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint8_t * nego_data, uint32_t * nego_data_len, uint32_t ntasks = 1, bool enable_dev = true);
-int teepsi_negotiate(SUDO_PSI_HW_CTX * ctx, uint8_t * nego_data, uint32_t nego_data_len);
+int teepsi_negotiate(SUDO_PSI_HW_CTX * ctx, const uint8_t * nego_data, uint32_t nego_data_len);
 int teepsi_calc(SUDO_PSI_HW_CTX * ctx, uint32_t neles, uint32_t pneles, uint32_t * elebytelens, uint8_t ** elements, uint8_t * result, uint32_t result_len);
 
-int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, uint8_t* hashes, uint32_t neles, uint8_t* phashes, uint32_t pneles, 
-    uint32_t * elebytelens, uint8_t ** elements, uint8_t*** result, uint32_t** resbytelens);
+int teepsi_find_intersection(SUDO_PSI_HW_CTX * ctx, const uint8_t* hashes, uint32_t neles, const uint8_t* phashes, uint32_t pneles, 
+    const uint32_t * elebytelens, const uint8_t ** elements, uint8_t*** result, uint32_t** resbytelens);
+
+int teepsi_find_intersection_index(SUDO_PSI_HW_CTX * ctx, const uint8_t* hashes, uint32_t neles, const uint8_t* phashes, uint32_t pneles, uint32_t* matches_index);
 
 int teepsi_done(SUDO_PSI_HW_CTX * ctx);
 
