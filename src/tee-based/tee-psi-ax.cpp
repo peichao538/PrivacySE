@@ -66,7 +66,8 @@ SUDO_PSI_HW_CTX * teepsi_init(role_type role, uint8_t * nego_data, uint32_t * ne
     //
     if (enable_dev)
     {
-        ret = psi_ctx->crypt_env->open_device(1, 128);
+        //ret = psi_ctx->crypt_env->open_device(1, 128);
+        ret = psi_ctx->crypt_env->open_device(1, 64);
         //ret = psi_ctx->crypt_env->open_device(1, 1);
         if (0 == ret)
         {

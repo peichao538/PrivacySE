@@ -173,6 +173,7 @@ int psi_test_2(int32_t argc, char** argv)
     //
     SUDO_PSI_HW_CTX * psi_server = NULL;
     SUDO_PSI_HW_CTX * psi_client = NULL;
+    SUDO_PSI_HW_CTX * psi_client_t = NULL;
 
     //
     uint8_t nego_data_server[128];
@@ -180,6 +181,9 @@ int psi_test_2(int32_t argc, char** argv)
 
     uint8_t nego_data_client[128];
     uint32_t nego_data_len_client = 128;
+
+    uint8_t nego_data_client_t[128];
+    uint32_t nego_data_len_client_t = 128;
 
     uint32_t server_nelements = 0, client_nelements = 0;
     uint8_t ** server_elements = NULL, ** client_elements = NULL;
@@ -211,6 +215,8 @@ int psi_test_2(int32_t argc, char** argv)
         printf("Client init fail!\n");
     }
 
+
+    //psi_client_t = teepsi_init(CLIENT, nego_data_client_t, &nego_data_len_client_t);
     // 1st time
     // Server <--> Client
 
@@ -279,6 +285,8 @@ int psi_test_2(int32_t argc, char** argv)
     //
     teepsi_done(psi_server);
     teepsi_done(psi_client);
+
+    //teepsi_done(psi_client_t);
 
     //
     free(server_result);
