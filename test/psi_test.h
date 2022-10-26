@@ -1,8 +1,8 @@
 /*
- * demonstrator.h
+ * psi_test.h
  *
- *  Created on: May 20, 2015
- *      Author: mzohner
+ *  Created on: May 20, 2020
+ *      Author: peic
  */
 
 #ifndef DEMONSTRATOR_H_
