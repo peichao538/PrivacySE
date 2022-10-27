@@ -1,9 +1,8 @@
-#include "../src/pir/sh-pir.h"
+#include "../pir/sh-pir.h"
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <iomanip>
-#include "../src/util/helpers.h"
 
 using namespace std;
 
@@ -33,8 +32,8 @@ void read_database_elements(uint8_t*** kelements, uint32_t** kelebytelens, uint8
         int sepos = line.find(",");
 
         string tk, tv;
-        tk.copy(line.c_str, sepos);
-        tv.copy(line.c_str + sepos, line.length - sepos);
+        tk = line.substr(0, sepos);
+        tv = line.substr(sepos+1, line.length() - sepos);
 
 		(*kelebytelens)[i] = tk.length();
 		(*kelements)[i] = (uint8_t*) malloc((*kelebytelens)[i]);
@@ -42,7 +41,7 @@ void read_database_elements(uint8_t*** kelements, uint32_t** kelebytelens, uint8
 
 		(*velebytelens)[i] = tv.length();
 		(*velements)[i] = (uint8_t*) malloc((*velebytelens)[i]);
-		memcpy((*elements)[i], (uint8_t*) tv.c_str(), (*velebytelens)[i]);
+		memcpy((*velements)[i], (uint8_t*) tv.c_str(), (*velebytelens)[i]);
 
 #ifdef PRINT_INPUT_ELEMENTS
 		cout << "Element " << i << ": ";
@@ -73,27 +72,26 @@ int pir_test(int32_t argc, char** argv)
     uint8_t ** server_kelements = NULL, ** server_velements = NULL;
     uint32_t * server_kelebytelens = NULL, * server_velebytelens = NULL;
 
-    char * client_query_str = "";
+    char * client_query_str = (char *)"Aziz.Ecker@wanadoo.co.uk";
     uint32_t client_query_str_len = strlen(client_query_str);
 
 
     //
-    string sever_filename = "../sample_sets/account_info_alice.txt";
-    //string client_filename = "../sample_sets/emails_bob.txt";
+    string sever_filename = "./sample_sets/account_info_test.txt";
 
     //
-    read_database_elements(&server_kelements, &server_kelebytelens, &server_velements, &server_kelebytelens, 
+    read_database_elements(&server_kelements, &server_kelebytelens, &server_velements, &server_velebytelens, 
             &server_nelements, sever_filename);
 
     // Init
     pir_server = teepir_init(SERVER, nego_data_server, &nego_data_len_server);
-    if (!psi_server)
+    if (!pir_server)
     {
         printf("Server init fail!\n");
     }
 
     pir_client = teepir_init(CLIENT, nego_data_client, &nego_data_len_client);
-    if (!psi_client)
+    if (!pir_client)
     {
         printf("Client init fail!\n");
     }
@@ -119,8 +117,8 @@ int pir_test(int32_t argc, char** argv)
     uint8_t ** enc_kwd;
     uint8_t ** enc_val;
     uint32_t * enc_val_len;
-    server_preprocess(pir_server, server_kelements, server_kelebytelens, 
-        server_velements, server_velebytelens, server_nelements, &enc_kwd, &enc_val, &enc_val_len);
+    server_preprocess(pir_server, server_kelements, server_kelebytelens, \
+        server_velements, server_velebytelens, server_nelements);
 
     server_gen_table(pir_server);
 
@@ -178,4 +176,8 @@ int pir_test(int32_t argc, char** argv)
 	free(server_velebytelens);
 
     return 1;
+}
+
+int32_t main(int32_t argc, char** argv) {
+	pir_test(argc, argv);
 }

@@ -59,9 +59,13 @@ OBJECTS_SERVERAIDED=${SRC}/server-aided/*.o
 # OT-based PSI
 SOURCES_OTPSI=${SRC}/ot-based/*.cpp
 OBJECTS_OTPSI=${SRC}/ot-based/*.o
-# TEE-based PSI
+# SE-based PSI
 SOURCES_TEEPSI=${SRC}/tee-based/*.cpp
 OBJECTS_TEEPSI=${SRC}/tee-based/*.o
+# SE-based PIR
+SOURCES_TEEPIR=${SRC}/pir/*.cpp
+OBJECTS_TEEPIR=${SRC}/pir/*.o
+
 #OBJECTS_BENCH=${SRC}/bench_psi.cpp
 # directory for the Miracl submodule and library
 MIRACL_LIB_DIR=${EXT}/miracl_lib
@@ -70,7 +74,7 @@ OBJECTS_MIRACL=${MIRACL_LIB_DIR}/*.o
 MIRACL_LIB=${EXT}/miracl_lib/miracl.a
 
 
-all: miracl core bench psi test_ot test_cuckoo test_hashing_util lib_psi test_cmp_sha
+all: miracl core bench psi pir test_ot test_cuckoo test_hashing_util lib_psi test_cmp_sha
 	@echo "make all done."
 
 
@@ -84,6 +88,9 @@ bench:
 
 psi:  
 	${CC} -o psi.exe ${SRC}/mains/psi_demo.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
+
+pir:  
+	${CC} -o pir.exe ${SRC}/mains/pir_demo.cpp ${OBJECTS_TEEPIR} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS}
 
 test: core
 	${CC} -o test.exe ${SRC}/mains/test_psi.cpp ${OBJECTS_TEEPSI} ${OBJECTS_DHPSI} ${OBJECTS_OTPSI} ${OBJECTS_NAIVE} ${OBJECTS_SERVERAIDED} ${OBJECTS_UTIL} ${OBJECTS_HASHING} ${OBJECTS_CRYPTO} ${OBJECTS_OT} ${OBJECTS_MIRACL} ${CFLAGS} ${DEBUG_OPTIONS} ${LIBRARIES} ${MIRACL_LIB} ${INCLUDE} ${COMPILER_OPTIONS} 

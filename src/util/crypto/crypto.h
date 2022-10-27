@@ -160,7 +160,7 @@ public:
 
 	int encrypt_hw(void * hdev, uint8_t* enc_key, uint8_t ** resbuf, uint8_t* inbuf, uint32_t ninbytes);
 	int decrypt_hw(void * hdev, uint8_t* dec_key, uint8_t ** resbuf, uint8_t* inbuf, uint32_t ninbytes);
-	int kdf(uint8_t * mkey, uint32_t mkey_len, uint8_t * label, uint32_t label_len, uint8_t * derived_key, uint32_t * dkey_len);
+	int kdf(void * hdev, uint8_t * mkey, uint32_t mkey_len, uint8_t * label, uint32_t label_len, uint8_t * derived_key, uint32_t * dkey_len);
 
 };
 
