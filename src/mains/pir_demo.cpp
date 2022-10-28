@@ -150,6 +150,13 @@ int pir_test(int32_t argc, char** argv)
 		if(1) {
 			for(i = 0; i < 1; i++) {
 				//cout << i << ": \t";
+                cout<< "keyword : ";
+                for(j = 0; j < client_query_str_len; j++) {
+					cout << client_query_str[j];
+				}
+
+                cout << endl << "Value : ";
+
 				for(j = 0; j < client_val_len; j++) {
 					cout << client_val[j];
 				}

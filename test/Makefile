@@ -60,7 +60,7 @@ target = test-psi.exe
 target-step = test-psi-step.exe
 target-pir = test-pir.exe
 
-all : $(target) $(target-step)
+all : $(target) $(target-step) $(target-pir)
 
 $(target) : $(OBJ)
 	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PSI) $(LIB)

@@ -47,6 +47,7 @@ typedef struct sudo_pir_hw_ctx_st
 
     //
     uint32_t * perm;
+    uint32_t * invperm;
 
     //
     int ntasks;
@@ -100,8 +101,8 @@ SUDO_PIR_HW_CTX * teepir_init(role_type role, uint8_t * nego_data, uint32_t * ne
     if (enable_dev)
     {
         //ret = pir_ctx->crypt_env->open_device(1, 128);
-        ret = pir_ctx->crypt_env->open_device(1, 64);
-        //ret = pir_ctx->crypt_env->open_device(1, 1);
+        //ret = pir_ctx->crypt_env->open_device(1, 64);
+        ret = pir_ctx->crypt_env->open_device(1, 1);
         if (0 == ret)
         {
             pir_ctx->crypt_env->close_device();
@@ -212,7 +213,7 @@ void * pir_preprocess_function(void* context)
             // hash key
             {
                 // todo: need randomized
-                crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], electx->p_enckey+pir_ctx->maskbytelen, pir_ctx->maskbytelen, 
+                crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], electx->p_enckey+perm[i]*pir_ctx->maskbytelen, pir_ctx->maskbytelen, 
                     salt, saltlen, inptr[i], electx->p_ksize[i], tmphashbuf);
 
                 // crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], electx->p_enckey+perm[i]*pir_ctx->maskbytelen, pir_ctx->maskbytelen, 
@@ -280,7 +281,7 @@ int server_preprocess(SUDO_PIR_HW_CTX * ctx,
     uint8_t ** p_value, uint32_t * v_size,
     uint32_t db_size)
 {
-    if (!ctx || p_key || p_value || k_size || v_size)
+    if (!ctx || !p_key || !p_value || !k_size || !v_size)
     {
         return 0;
     }
@@ -290,9 +291,9 @@ int server_preprocess(SUDO_PIR_HW_CTX * ctx,
     ctx->perm = (uint32_t*) malloc(sizeof(uint32_t) * db_size);
     crypt_env->gen_rnd_perm(ctx->perm, db_size);
 
-    //uint8_t ** tp_key = (uint8_t **)malloc(db_size * (uint8_t*));
-    uint8_t * tp_key = (uint8_t *)malloc(ctx->maskbytelen * ctx->e2ctx->dbsize);;
-    uint8_t ** tp_value = (uint8_t **)malloc(db_size * sizeof(uint8_t *));
+    //
+    uint8_t * tp_key = (uint8_t *)malloc(db_size * ctx->maskbytelen);;
+    uint8_t ** tp_encv = (uint8_t **)malloc(db_size * sizeof(uint8_t *));
     uint32_t * tp_encv_len = (uint32_t *)malloc(db_size * sizeof(uint32_t));
 
     //
@@ -303,7 +304,7 @@ int server_preprocess(SUDO_PIR_HW_CTX * ctx,
     ctx->e2ctx->p_value = p_value;
     ctx->e2ctx->p_vsize = v_size;
     ctx->e2ctx->p_enckey = tp_key;
-    ctx->e2ctx->p_encvalue = tp_value;
+    ctx->e2ctx->p_encvalue = tp_encv;
     ctx->e2ctx->p_encvalue_len = tp_encv_len;
 
     pir_run_task(ctx->ntasks, *ctx, pir_preprocess_function);
@@ -321,14 +322,14 @@ int server_gen_table(SUDO_PIR_HW_CTX * ctx)
     uint8_t * hashes = ctx->e2ctx->p_enckey;
     uint32_t hashbytelen = ctx->maskbytelen;
 
-	uint32_t* invperm = (uint32_t*) malloc(sizeof(uint32_t) * neles);
+	ctx->invperm = (uint32_t*) malloc(sizeof(uint32_t) * neles);
 	uint64_t *tmpval, tmpkey = 0;
 	//uint64_t *tmpval, *tmpkey;
 	uint32_t mapbytelen = min((uint32_t)ctx->maskbytelen, (uint32_t) sizeof(uint64_t));
 	uint32_t size_intersect, i, intersect_ctr;
 
 	for(i = 0; i < neles; i++) {
-		invperm[ctx->perm[i]] = i;
+		ctx->invperm[ctx->perm[i]] = i;
 	}
 
 	// g_direct_hash 
@@ -339,12 +340,12 @@ int server_gen_table(SUDO_PIR_HW_CTX * ctx)
 		memcpy(&tmpkey, hashes + i*hashbytelen, mapbytelen);
 		//tmpkey = (uint64_t *)(hashes + i*hashbytelen);
 		//g_hash_table_insert(map,(void*) &tmpkey, &(invperm[i]));
-		g_hash_table_insert(map, GINT_TO_POINTER(tmpkey), &(invperm[i]));
+		g_hash_table_insert(map, GINT_TO_POINTER(tmpkey), &(ctx->invperm[i]));
+        //g_hash_table_insert(map, GINT_TO_POINTER(tmpkey), &(ctx->perm[i]));
 	}
 
     ctx->map = map;
 
-	free(invperm);
 	return 1;
 }
 
@@ -381,7 +382,6 @@ int server_response(SUDO_PIR_HW_CTX * ctx, uint8_t * enc_key, uint32_t enc_klen,
     uint8_t * hashes = ctx->e2ctx->p_enckey;
     uint32_t hashbytelen = ctx->maskbytelen;
 
-	uint32_t* invperm = (uint32_t*) malloc(sizeof(uint32_t) * neles);
 	uint64_t *tmpval, tmpkey = 0;
 	//uint64_t *tmpval, *tmpkey;
 	uint32_t mapbytelen = min((uint32_t)ctx->maskbytelen, (uint32_t) sizeof(uint64_t));
@@ -406,11 +406,19 @@ int server_response(SUDO_PIR_HW_CTX * ctx, uint8_t * enc_key, uint32_t enc_klen,
 	}
 
     //
-    uint8_t * tenc_val = (uint8_t *)malloc(ctx->e2ctx->p_encvalue_len[i]);
-    memcpy(tenc_val, ctx->e2ctx->p_encvalue[pos], ctx->e2ctx->p_encvalue_len[i]);
+    if (-1 == pos)
+    {
+        *enc_value = NULL;
+        *enc_vlen = 0;
+    }
+    else
+    {
+        uint8_t * tenc_val = (uint8_t *)malloc(ctx->e2ctx->p_encvalue_len[pos]);
+        memcpy(tenc_val, ctx->e2ctx->p_encvalue[pos], ctx->e2ctx->p_encvalue_len[pos]);
 
-    *enc_value = tenc_val;
-    *enc_vlen = ctx->e2ctx->p_encvalue_len[i];
+        *enc_value = tenc_val;
+        *enc_vlen = ctx->e2ctx->p_encvalue_len[pos];
+    }
 
 	return 1;
 }
@@ -419,7 +427,7 @@ int client_getv(SUDO_PIR_HW_CTX * ctx, uint8_t * key, uint32_t klen, uint8_t * e
 {
     crypto * crypt_env = ctx->crypt_env;
 
-    if (enc_value)
+    if (!enc_value)
     {
         return 0;
     }
@@ -455,6 +463,12 @@ int teepir_done(SUDO_PIR_HW_CTX * ctx)
     {
         free(ctx->perm);
         ctx->perm = NULL;
+    }
+
+    if (ctx->invperm != NULL)
+    {
+        free(ctx->invperm);
+        ctx->invperm = NULL;
     }
 
     //
