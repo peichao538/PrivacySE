@@ -55,12 +55,15 @@ OBJ = $(patsubst %cpp, %o, $(SRC))
 OBJECTS_PSI = psi_test.o
 OBJECTS_PSI_STEP = psi_ax_test.o
 OBJECTS_PIR = pir_test.o
+OBJECTS_SHW_PIR = shw_pir_test.o
+
 
 target = test-psi.exe
 target-step = test-psi-step.exe
 target-pir = test-pir.exe
+target-shw-pir = test-shw-pir.exe
 
-all : $(target) $(target-step) $(target-pir)
+all : $(target) $(target-step) $(target-pir) $(target-shw-pir)
 
 $(target) : $(OBJ)
 	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PSI) $(LIB)
@@ -70,6 +73,9 @@ $(target-step) : $(OBJ)
 
 $(target-pir) : $(OBJ)
 	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PIR) $(LIB)
+
+$(target-shw-pir) : $(OBJ)
+	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_SHW_PIR) $(LIB)
 
 # .SUFFIXES: .c.o
 # .c.o:

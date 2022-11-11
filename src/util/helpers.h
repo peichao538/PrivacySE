@@ -32,6 +32,43 @@ struct element_ctx {
 	bool hasvarbytelen;
 };
 
+struct element_ctx0
+{
+	bool hasvarbytelen_i;
+	bool getvarbytelen_o;
+
+	union {
+		uint32_t fixedbytelen_i;
+		uint32_t* varbytelens_i;
+	};
+	union {
+		uint8_t* input1d;
+		uint8_t** input2d;
+	};
+	union 
+	{
+		uint32_t fixedbytelen_o;
+		uint32_t* varbytelens_o;
+	};
+	union 
+	{
+		uint8_t* output1d;
+		uint8_t** output2d;
+	};	
+};
+
+struct element_ctx2 
+{
+	uint32_t nelements;
+
+	element_ctx0 keyw;
+	element_ctx0 value;
+	
+	uint32_t* perm;
+	uint32_t startelement;
+	uint32_t endelement;
+};
+
 struct sym_ctx {
 	crypto* symcrypt;
 	uint8_t* keydata;
@@ -54,6 +91,27 @@ struct task_ctx {
 	uint32_t hblkid;
 	uint8_t * entropy;
 	uint32_t entropylen;
+};
+
+struct task_ctx2 {
+	union {
+		element_ctx eles;
+		element_ctx2 subdbase;
+	};
+	
+	union {
+		sym_ctx sctx;
+		asym_ctx actx;
+	};
+
+	uint32_t hblkid;
+
+	uint8_t * slt;
+	uint32_t sltlen;
+
+	uint8_t * kek;
+	uint32_t keklen;
+
 };
 
 struct snd_ctx {
