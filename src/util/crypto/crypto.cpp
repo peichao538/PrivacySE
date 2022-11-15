@@ -847,7 +847,7 @@ int crypto::encrypt_hw(void * hdev, uint8_t* enc_key, uint8_t ** resbuf, uint8_t
 	{
 		*resbuf = tmp_res;
 	}
-	eles
+	else
 	{
 		memcpy(*resbuf, tmp_res, enc_blk * 16);
 		free(tmp_res);
@@ -947,7 +947,7 @@ int crypto::kdf(void * hdev, uint8_t * mkey, uint32_t mkey_len, uint8_t * label,
 
     if(ret != CAP_RET_SUCCESS)
     {
-        return 0;
+        return ret;
     }
 
 	return 1;

@@ -36,7 +36,7 @@ struct sudo_shw_pri_ctx_st
 
 static const uint8_t const_rng_seed[] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
-SUDO_SHW_PRI_CTX * shw_init(role_type role, uint8_t * nego_data, uint32_t * nego_data_len, uint32_t ntasks = 1, bool enable_dev = true)
+SUDO_SHW_PRI_CTX * shw_init(role_type role, uint8_t * nego_data, uint32_t * nego_data_len, uint32_t ntasks, bool enable_dev)
 {
     int ret = 0;
 
@@ -73,12 +73,12 @@ SUDO_SHW_PRI_CTX * shw_init(role_type role, uint8_t * nego_data, uint32_t * nego
     if (enable_dev)
     {
         //ret = spri_ctx->crypt_env->open_device(1, 128);
-        //ret = spri_ctx->crypt_env->open_device(1, 64);
-        ret = spri_ctx->crypt_env->open_device(1, 1);
+        ret = spri_ctx->crypt_env->open_device(1, 64);
+        //ret = spri_ctx->crypt_env->open_device(1, 1);
         if (0 == ret)
         {
             spri_ctx->crypt_env->close_device();
-            free(pirspri_ctx_ctx);
+            free(spri_ctx);
             return NULL;
         }
     }
@@ -141,12 +141,14 @@ int shw_pir_preprocess(SUDO_SHW_PRI_CTX * ctx)
     ret = crypt_env->kdf(ctx->crypt_env->dev_mngt.hdev[0], ctx->entr, 16, (uint8_t *)"pir-salt", strlen("pir-salt"), ctx->slt, &ctx->slt_len);
     if (0 == ret)
     {
+        printf("error kdf salt: %08x \n", ret);
         return 0;
     }
 
     ret = crypt_env->kdf(ctx->crypt_env->dev_mngt.hdev[0], ctx->entr, 16, (uint8_t *)"pir-kek", strlen("pir-kek"), ctx->kek, &ctx->kek_len);
     if (0 == ret)
     {
+        printf("error kdf kek: %08x \n", ret);
         return 0;
     }
 
@@ -167,10 +169,10 @@ static void * shw_pir_sever_process_func(void * context)
 
     uint32_t* perm = electx.perm;
 	uint8_t * salt = pir_ctx->slt;
-	uint32_t saltlen = pir_ctx->slt_len;
+	uint32_t saltlen = pir_ctx->sltlen;
 
     uint8_t * key = pir_ctx->kek;
-    uint32_t keylen = pir_ctx->kek_len;
+    uint32_t keylen = pir_ctx->keklen;
 
 	if (1 != crypt_env->hw_on)
 	{
@@ -178,7 +180,6 @@ static void * shw_pir_sever_process_func(void * context)
 	}
 
 	uint32_t i, ret;
-	uint32_t * perm = pir_ctx->perm;
 	uint8_t* tmphashbuf = (uint8_t*) malloc(crypt_env->get_hash_bytes());
 
     uint8_t kdk[16] = {0};
@@ -197,7 +198,7 @@ static void * shw_pir_sever_process_func(void * context)
             
             // encrypt payload
             {
-                ret = crypt_env->kdf(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], pir_ctx->kek, pir_ctx->kek_len, \
+                ret = crypt_env->kdf(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], pir_ctx->kek, pir_ctx->keklen, \
                         inptr_kw[i], inptr_kw_len[i], kdk, &kdk_len);
                 if (ret == 0)
                 {
@@ -218,13 +219,13 @@ static void * shw_pir_sever_process_func(void * context)
                 }
                 else
                 {
-                    uint8_t *inptr_val = electx.value.input1 + i*electx.value.fixedbytelen_i;
+                    uint8_t *inptr_val = electx.value.input1d + i*electx.value.fixedbytelen_i;
                     uint32_t in_val_len = electx.value.fixedbytelen_i;
 
                     uint8_t *outptr_val = electx.value.output1d + perm[i]*electx.value.fixedbytelen_o;
                     uint32_t out_val_len = electx.value.fixedbytelen_o;
 
-                    outptr_val_len = crypt_env->encrypt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], kdk, \
+                    out_val_len = crypt_env->encrypt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], kdk, \
                             &outptr_val, inptr_val, in_val_len);
                 }
 
@@ -251,8 +252,8 @@ static void * shw_pir_sever_process_func(void * context)
             
             // encrypt payload
             {
-                ret = crypt_env->kdf(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], pir_ctx->kek, pir_ctx->kek_len, \
-                        inptr_kw + i*in_kw_len, inptr_kw_len, kdk, &kdk_len);
+                ret = crypt_env->kdf(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], pir_ctx->kek, pir_ctx->keklen, \
+                        inptr_kw + i*in_kw_len, in_kw_len, kdk, &kdk_len);
                 if (ret == 0)
                 {
                     // Todo: log error
@@ -272,13 +273,13 @@ static void * shw_pir_sever_process_func(void * context)
                 }
                 else
                 {
-                    uint8_t *inptr_val = electx.value.input1 + i*electx.value.fixedbytelen_i;
+                    uint8_t *inptr_val = electx.value.input1d + i*electx.value.fixedbytelen_i;
                     uint32_t in_val_len = electx.value.fixedbytelen_i;
 
                     uint8_t *outptr_val = electx.value.output1d + perm[i]*electx.value.fixedbytelen_o;
                     uint32_t out_val_len = electx.value.fixedbytelen_o;
 
-                    outptr_val_len = crypt_env->encrypt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], kdk, \
+                    out_val_len = crypt_env->encrypt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], kdk, \
                             &outptr_val, inptr_val, in_val_len);
                 }
 
@@ -288,7 +289,7 @@ static void * shw_pir_sever_process_func(void * context)
             {
                 // todo: need randomized
                 crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], outptr_kw+perm[i]*out_kw_len, out_kw_len, 
-                    salt, saltlen, inptr_kw + i*in_kw_len, inptr_kw_len, tmphashbuf);
+                    salt, saltlen, inptr_kw + i*in_kw_len, in_kw_len, tmphashbuf);
             }
         }
 	}
@@ -323,7 +324,7 @@ static void shw_pir_server_run_task(uint32_t nthreads, task_ctx2 context, void* 
 
         contexts[i].subdbase.nelements = neles_cur;
         contexts[i].subdbase.startelement = electr;
-        contexts[i].subdbase.endelements = electr + neles_cur;
+        contexts[i].subdbase.endelement = electr + neles_cur;
 
 		electr += neles_cur;
 	}
@@ -347,11 +348,11 @@ static void shw_pir_server_run_task(uint32_t nthreads, task_ctx2 context, void* 
 static int shw_pir_server_gen_hashmap(SUDO_SHW_PRI_CTX * ctx)
 {
     int i;
-    task_ctx2 ectx = ctx->ectx2;
+    task_ctx2 * ectx = ctx->ectx2;
 
-    uint32_t neles = ectx.subdbase.nelements;
-    uint8_t * hashes = ectx.subdbase.keyw.output1d;
-    uint32_t hashbytelen = ectx.subdbase.keyw.fixedbytelen_o;
+    uint32_t neles = ectx->subdbase.nelements;
+    uint8_t * hashes = ectx->subdbase.keyw.output1d;
+    uint32_t hashbytelen = ectx->subdbase.keyw.fixedbytelen_o;
 
 	ctx->invperm = (uint32_t*) malloc(sizeof(uint32_t) * neles);
     if (ctx->invperm == NULL)
@@ -394,7 +395,7 @@ int shw_pir_server_gen_table(
     uint32_t db_size
 ){
     int ret;
-    if (!ctx || !p_key || !p_value || !k_size || !v_size)
+    if (!ctx || !ptr_keyw || !ptr_val || !kw_size || !val_size)
     {
         return 0;
     }
@@ -404,9 +405,6 @@ int shw_pir_server_gen_table(
     ctx->perm = (uint32_t*) malloc(sizeof(uint32_t) * db_size);
     crypt_env->gen_rnd_perm(ctx->perm, db_size);
 
-    //
-    pir_derive_key(ctx);
-
     // default use
     ctx->maskbytelen = 8;
 
@@ -415,9 +413,9 @@ int shw_pir_server_gen_table(
     uint8_t ** tp_encval = (uint8_t **)malloc(db_size * sizeof(uint8_t *));
     uint32_t * tp_encval_len = (uint32_t *)malloc(db_size * sizeof(uint32_t));
 
-    memset(tp_enckeyw, 0, db_size);
-    memset(tp_encval, db_size, 0);
-    memset(tp_encval_len, 0, db_size);
+    memset(tp_enckeyw, 0, db_size * ctx->maskbytelen);
+    memset(tp_encval, 0, db_size * sizeof(uint8_t *));
+    memset(tp_encval_len, 0, db_size * sizeof(uint32_t));
 
     //
     task_ctx2 * ectx = (task_ctx2 *)malloc(sizeof(task_ctx2));
@@ -450,10 +448,10 @@ int shw_pir_server_gen_table(
     
     ctx->ectx2 = ectx;
 
-    shw_pir_run_task(ctx->ntasks, *ectx, shw_pir_sever_process_func);
+    shw_pir_server_run_task(ctx->ntasks, *ectx, shw_pir_sever_process_func);
 
     //
-    memset(ctx.perm, 0, db_size);
+    memset(ctx->perm, 0, db_size * sizeof(uint32_t));
     free(ctx->perm);
     ctx->perm = NULL;
 
@@ -472,8 +470,6 @@ int shw_pir_client_gen_query(
     int ret;
     crypto * crypto_env = ctx->crypt_env;
 
-    pir_task_ctx_t * electx = ctx->e2ctx;
-
     uint8_t * tmphashbuf = (uint8_t *)malloc(crypto_env->get_hash_bytes() * sizeof(uint8_t));
     if (!tmphashbuf)
     {
@@ -486,12 +482,12 @@ int shw_pir_client_gen_query(
     uint8_t * tenc_keyw = (uint8_t *)malloc(ctx->maskbytelen);
 
     ret = crypto_env->hash_with_salt_hw(crypto_env->dev_mngt.hdev[0], tenc_keyw, ctx->maskbytelen, 
-        salt, saltlen, kewy, kwlen, tmphashbuf);
+        salt, saltlen, keyw, kwlen, tmphashbuf);
 
     *ptr_enc_keyw = tenc_keyw;
     *enc_kwlen = ctx->maskbytelen;
 
-    free tmphashbuf;
+    free(tmphashbuf);
 
     return 1;
 }
@@ -501,10 +497,10 @@ int shw_pir_server_response(
     uint8_t * ptr_enc_keyw, uint32_t enc_kwlen, 
     uint8_t ** ptr_enc_value, uint32_t * enc_vlen
 ){
-    task_ctx2 ectx = ctx->ectx2;
-    uint32_t neles = ectx.subdbase.nelements;
-    uint8_t * hashes = ectx.subdbase.keyw.output1d;
-    uint32_t hashbytelen = ectx.subdbase.keyw.fixedbytelen_o;
+    task_ctx2 * ectx = ctx->ectx2;
+    uint32_t neles = ectx->subdbase.nelements;
+    uint8_t * hashes = ectx->subdbase.keyw.output1d;
+    uint32_t hashbytelen = ectx->subdbase.keyw.fixedbytelen_o;
 
 	uint64_t *tmpval, tmpkey = 0;
 	uint32_t mapbytelen = min((uint32_t)ctx->maskbytelen, (uint32_t) sizeof(uint64_t));
@@ -535,8 +531,8 @@ int shw_pir_server_response(
     }
     else
     {
-        uint32_t vlen = ectx.subdbase.value.varbytelens_o[pos];
-        uint8_t * ptr_v = ectx.subdbase.value.output2d[pos];
+        uint32_t vlen = ectx->subdbase.value.varbytelens_o[pos];
+        uint8_t * ptr_v = ectx->subdbase.value.output2d[pos];
 
         uint8_t * tenc_val = (uint8_t *)malloc(vlen * sizeof(uint8_t));
         memcpy(tenc_val, ptr_v, vlen);
@@ -734,7 +730,7 @@ static void shw_psi_run_task(uint32_t nthreads, task_ctx2 context, void* (*func)
 
         contexts[i].eles.nelements = neles_cur;
         contexts[i].eles.startelement = electr;
-        contexts[i].eles.endelements = electr + neles_cur;
+        contexts[i].eles.endelement = electr + neles_cur;
 
 		electr += neles_cur;
 	}
@@ -810,7 +806,7 @@ int shw_psi_calc(
     ectx->slt = ctx->slt;
     ectx->sltlen = ctx->slt_len;
 
-    ctx->ectx = ectx;
+    ctx->ectx2 = ectx;
 
 	//run_task(ctx->ntasks, *ectx, psi_hashing_use_tee_function);
     shw_psi_run_task(ctx->ntasks, *ectx, psi_hashing_use_tee_function);

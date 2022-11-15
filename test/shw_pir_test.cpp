@@ -114,10 +114,10 @@ int shw_pir_test(int32_t argc, char** argv)
     }
 
     // server preprocess
-    shw_pir_preprocess(pir_server);
+    ret = shw_pir_preprocess(pir_server);
 
     // client preprocess
-    shw_pir_preprocess(pir_client);
+    ret = shw_pir_preprocess(pir_client);
 
     // server
     shw_pir_server_gen_table(pir_server, server_kelements, server_kelebytelens, server_velements, server_velebytelens, server_nelements);
@@ -125,17 +125,12 @@ int shw_pir_test(int32_t argc, char** argv)
     // client
     uint8_t * client_enckey;
     uint32_t client_enckey_len;
-    shw_pir_client_gen_query(pir_client, (uint8_t *)client_query_str, client_query_str_len, &client_enckey, &client_enckey_len)
-
-    //
-    uint8_t * server_encval;
-    uint32_t server_encval_len;
-    shw_pir_server_response(pir_server, client_enckey, client_enckey_len, &server_encval, &server_encval_len);
+    shw_pir_client_gen_query(pir_client, (uint8_t *)client_query_str, client_query_str_len, &client_enckey, &client_enckey_len);
 
     // server - query
     uint8_t * server_encval;
     uint32_t server_encval_len;
-    server_response(pir_server, client_enckey, client_enckey_len, &server_encval, &server_encval_len);
+    shw_pir_server_response(pir_server, client_enckey, client_enckey_len, &server_encval, &server_encval_len);
 
     // client - get value
     uint8_t * client_val;
