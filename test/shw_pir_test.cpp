@@ -72,7 +72,8 @@ int shw_pir_test(int32_t argc, char** argv)
     uint8_t ** server_kelements = NULL, ** server_velements = NULL;
     uint32_t * server_kelebytelens = NULL, * server_velebytelens = NULL;
 
-    char * client_query_str = (char *)"Aziz.Ecker@wanadoo.co.uk";
+    //char * client_query_str = (char *)"Aziz.Ecker@wanadoo.co.uk";    
+    char * client_query_str = (char *)"Willibald.Sieben@live.com.mx";
     uint32_t client_query_str_len = strlen(client_query_str);
 
 

@@ -431,12 +431,14 @@ int shw_pir_server_gen_table(
     ectx->subdbase.keyw.hasvarbytelen_i = true;
     ectx->subdbase.keyw.input2d = ptr_keyw;
     ectx->subdbase.keyw.varbytelens_i = kw_size;
+    ectx->subdbase.keyw.getvarbytelen_o = false;
     ectx->subdbase.keyw.output1d = tp_enckeyw;
     ectx->subdbase.keyw.fixedbytelen_o = ctx->maskbytelen;
 
     ectx->subdbase.value.hasvarbytelen_i = true;
     ectx->subdbase.value.input2d = ptr_val;
     ectx->subdbase.value.varbytelens_i = val_size;
+    ectx->subdbase.value.getvarbytelen_o = true;
     ectx->subdbase.value.output2d = tp_encval;
     ectx->subdbase.value.varbytelens_o = tp_encval_len;
 
@@ -612,8 +614,8 @@ int shw_pir_done(SUDO_SHW_PRI_CTX * ctx)
         free(ctx->ectx2->subdbase.value.output2d);
         free(ctx->ectx2->subdbase.value.varbytelens_o);
 
-        free(ctx->ectx);
-        ctx->ectx = NULL;
+        free(ctx->ectx2);
+        ctx->ectx2 = NULL;
     }
 
     //
@@ -668,12 +670,12 @@ static void *shw_psi_hashing_process_func(void* context) {
 #ifdef DEBUG
 	cout << "Hashing thread started" << endl;
 #endif
-	sym_ctx hdata = ((task_ctx2*) context)->sctx;
-	element_ctx electx = ((task_ctx2*) context)->eles;
+    task_ctx2 * psi_ctx = (task_ctx2 *)context;
+    crypto * crypt_env = psi_ctx->sctx.symcrypt;
+    element_ctx electx = psi_ctx->eles;
 
-	crypto* crypt_env = hdata.symcrypt;
-	uint8_t * salt = ((task_ctx2*) context)->slt;
-	uint32_t saltlen = ((task_ctx2*) context)->sltlen;
+	uint8_t * salt = psi_ctx->slt;
+	uint32_t saltlen = psi_ctx->sltlen;
 
 	if (1 != crypt_env->hw_on)
 	{
@@ -688,13 +690,13 @@ static void *shw_psi_hashing_process_func(void* context) {
 		if(electx.hasvarbytelen) {
 			uint8_t **inptr = electx.input2d;
 			for(i = electx.startelement; i < electx.endelement; i++) {
-				crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
+				crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[psi_ctx->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
 					salt, saltlen, inptr[i], electx.varbytelens[i], tmphashbuf);
 			}
 		} else {
 			uint8_t *inptr = electx.input1d;
 			for(i = electx.startelement; i < electx.endelement; i++, inptr+=electx.fixedbytelen) {
-				crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[((task_ctx*) context)->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
+				crypt_env->hash_with_salt_hw(crypt_env->dev_mngt.hdev[psi_ctx->hblkid], electx.output+perm[i]*electx.outbytelen, electx.outbytelen, 
 					salt, saltlen, inptr, electx.fixedbytelen, tmphashbuf);
 			}
 		}
@@ -808,8 +810,8 @@ int shw_psi_calc(
 
     ctx->ectx2 = ectx;
 
-	//run_task(ctx->ntasks, *ectx, psi_hashing_use_tee_function);
-    shw_psi_run_task(ctx->ntasks, *ectx, psi_hashing_use_tee_function);
+    //
+    shw_psi_run_task(ctx->ntasks, *ectx, shw_psi_hashing_process_func);
 
     return 1;
 }
