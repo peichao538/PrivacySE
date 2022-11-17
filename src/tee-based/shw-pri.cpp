@@ -198,7 +198,7 @@ static void * shw_pir_sever_process_func(void * context)
             
             // encrypt payload
             {
-                ret = crypt_env->kdf(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], pir_ctx->kek, pir_ctx->keklen, \
+                ret = crypt_env->kdf(crypt_env->dev_mngt.hdev[pir_ctx->hblkid], key, keylen, \
                         inptr_kw[i], inptr_kw_len[i], kdk, &kdk_len);
                 if (ret == 0)
                 {

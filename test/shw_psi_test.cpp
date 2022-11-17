@@ -325,9 +325,11 @@ int psi_test_2(int32_t argc, char** argv)
 int32_t main(int32_t argc, char** argv) {
 
     // get result
+    cout << "test case: get result directly (data size:2^10)" << endl;
 	psi_test(argc, argv);
 
     // get index
+    cout << "test case: get index only (data size:2^20)" << endl;
 	psi_test_2(argc, argv);
 
 }

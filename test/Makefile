@@ -53,27 +53,19 @@ OBJ = $(patsubst %cpp, %o, $(SRC))
 
 
 OBJECTS_PSI = psi_test.o
-OBJECTS_PSI_STEP = psi_ax_test.o
 OBJECTS_SHW_PSI = shw_psi_test.o
 OBJECTS_SHW_PIR = shw_pir_test.o
 
 
 target = test-psi.exe
-target-step = test-psi-step.exe
 target-shw-psi = test-shw-psi.exe
 target-shw-pir = test-shw-pir.exe
 
-all : $(target) $(target-step) $(target-shw-psi) $(target-shw-pir)
+all : $(target) $(target-shw-psi) $(target-shw-pir)
 	@echo "make all test case done."
 
 $(target) : $(OBJ)
 	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PSI) $(LIB)
-
-$(target-step) : $(OBJ)
-	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PSI_STEP) $(LIB)
-
-$(target-pir) : $(OBJ)
-	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_PIR) $(LIB)
 
 $(target-shw-pir) : $(OBJ)
 	$(CC) $(CC_FLAG) -o $@ $(OBJECTS_SHW_PIR) $(LIB)
@@ -91,5 +83,5 @@ $(target-shw-psi) : $(OBJ)
 .PHONY : clean
 clean :
 	@echo "Remove compile out..."
-	rm -f *.o $(target) $(target-step);
+	rm -f *.o *.exe;
 

@@ -862,7 +862,7 @@ int crypto::decrypt_hw(void * hdev, uint8_t* dec_key, uint8_t** resbuf, uint8_t*
 	int ret;
 	uint32_t tlen = 0;
 
-	if (ninbytes % 16)
+	if (ninbytes % 16 != 0)
 	{
 		return 0;
 	}
@@ -873,6 +873,8 @@ int crypto::decrypt_hw(void * hdev, uint8_t* dec_key, uint8_t** resbuf, uint8_t*
 		return 0;
 	}
 
+	memset(tmp_res, 0, ninbytes);
+
 	//
 	cap_cipher_ctx_t cipher_ctx;
 	memset(&cipher_ctx, 0, sizeof(cap_cipher_ctx_t));
@@ -880,7 +882,6 @@ int crypto::decrypt_hw(void * hdev, uint8_t* dec_key, uint8_t** resbuf, uint8_t*
 	cipher_ctx.hdev = hdev;
     cipher_ctx.key_index = 0;
     cipher_ctx.sess.mode = CAP_SYNC_MODE;
-
 
     while((ret = cap_cipher_onetime(&cipher_ctx, CAP_CIPHER_SM4, CAP_CIPHER_ECB, CAP_CIPHER_DECRYPT, 
 			inbuf, ninbytes, tmp_res, &tlen, dec_key, 16, NULL, 0, NULL, 0)) == CAP_RET_BUSY)
@@ -890,6 +891,7 @@ int crypto::decrypt_hw(void * hdev, uint8_t* dec_key, uint8_t** resbuf, uint8_t*
 
     if(ret != CAP_RET_SUCCESS)
     {
+		free(tmp_res);
         return 0;
     }
 
@@ -899,9 +901,11 @@ int crypto::decrypt_hw(void * hdev, uint8_t* dec_key, uint8_t** resbuf, uint8_t*
 
 	if (*resbuf == NULL)
 	{
-		uint8_t * tmp_res2 = (uint8_t *)malloc(tlen * sizeof(uint8_t));
+		uint8_t * tmp_res2 = NULL;
+		tmp_res2 = (uint8_t *)malloc(tlen * sizeof(uint8_t));
 		if (!tmp_res2)
 		{
+			free(tmp_res);
 			return 0;
 		}
 
@@ -947,8 +951,10 @@ int crypto::kdf(void * hdev, uint8_t * mkey, uint32_t mkey_len, uint8_t * label,
 
     if(ret != CAP_RET_SUCCESS)
     {
+		free(tlabel);
         return ret;
     }
 
+	free(tlabel);
 	return 1;
 }
